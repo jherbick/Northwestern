@@ -9,4 +9,5 @@
 # assigning values to variables:
 # R does not require variable types to be declared
 x <- 2
+assign("x", 2)
 
