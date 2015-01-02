@@ -6,6 +6,7 @@
 # Highlight a selection and press Ctrl+Enter
 # To run an entire file, press Ctrl+Shift+S
 
-# assigning values to variables:  
+# assigning values to variables:
+# R does not require variable types to be declared
 x <- 2
 
