@@ -53,6 +53,10 @@ is.logical(x)
 # without the need to loop through the vector.
 
 x <- c(1,2,3,4,5)
+x * 3
+
+
+
  
 
 
