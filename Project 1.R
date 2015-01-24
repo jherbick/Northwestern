@@ -50,28 +50,35 @@ quantile(infantWhole, probs = c(0.1, 0.25, 0.5, 0.75, 0.9))
 # Question 9 - histograms
 #------------------------
 
-par(mfrow=c(1,3))  # Keep graphs together
+# Create 3 histograms plotting the WHOLE value by sex
+plot1 <- ggplot(data=femaleAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.2, col="black", fill = "blue") + ggtitle("Female Abalone Whole Weight")
+plot2 <- ggplot(data=maleAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.2, col="black", fill = "blue") + ggtitle("Male Abalone Whole Weight")
+plot3 <- ggplot(data=infantAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.1, col="black", fill = "blue") + ggtitle("Infant Abalone Whole Weight")
+# Put 3 histograms onto a single panel
+grid.arrange(plot1, plot2, plot3, ncol=3)
+
+
+
+# Old way of generating histograms.  Works, but does not use ggplot2
+#par(mfrow=c(1,3))  # Keep graphs together
 
 #Female Histogram, whole values
-hist(femaleWhole, main="Female Abalone Whole Weight", col="blue", 
-     xlab="Female Abalone Whole Weight", ylim=c(0,35))
+#hist(femaleWhole, main="Female Abalone Whole Weight", col="blue", 
+#     xlab="Female Abalone Whole Weight", ylim=c(0,35))
 
 #Male Histogram, whole values
-hist(maleWhole, main="Male Abalone Whole Weight", col="blue", 
-     xlab="Male Abalone Whole Weight",  ylim=c(0,35))
+#hist(maleWhole, main="Male Abalone Whole Weight", col="blue", 
+#     xlab="Male Abalone Whole Weight",  ylim=c(0,35))
 
 #Infant Histogram, whole values
-hist(infantWhole, main="Infant Abalone Whole Weight", col="blue", 
-     xlab="Infant Abalone Whole Weight",  ylim=c(0,35))
+#hist(infantWhole, main="Infant Abalone Whole Weight", col="blue", 
+#     xlab="Infant Abalone Whole Weight",  ylim=c(0,35))
 
 
-
+# Absolute most basic histograms
 #hist(femaleWhole)   #Histogram of female whole values
 #hist(maleWhole)     #Histogram of male whole values
 #hist(infantWhole)   #Histogram of infants whole values
-
-
-
 
 
 
