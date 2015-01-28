@@ -22,6 +22,34 @@ abaloneSample <- fullDataSet[index,]
 write.csv(abaloneSample, "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/mydata.csv", row.names=T)
 
 
+# Question 5 - Volume
+#--------------------
+
+# Read in the full abalone dataset
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/mydata.csv"
+sampleDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",")
+
+# Create vectors from sample data for each variable needed
+length <- c(sampleDataSet[,3])
+diam <- c(sampleDataSet[,4])
+height <- c(sampleDataSet[,5])
+
+# Create a new vector with the volume as defined in the problem.
+volume <- length*diam*height
+
+d <- data.frame(sampleDataSet, VOLUME=volume)
+
+# Create new dataset with the VOLUME attribute
+write.csv(d, "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/volume.csv", row.names=F)
+
+# Create 3 histograms plotting the WHOLE value by sex
+plot1 <- ggplot(data=d) + geom_histogram(aes(x=VOLUME), binwidth=0.02, col="black", fill = "blue") + ggtitle("Volume Histogram, All Abalone")
+plot2 <- ggplot(data=d) + geom_histogram(aes(x=WHOLE), binwidth=0.2, col="black", fill = "blue") + ggtitle("Whole Histogram, All Abalone")
+
+# Put 2 histograms onto a single panel
+grid.arrange(plot1, plot2, ncol=2)
+
+
 # Question 8 - Quantiles
 #------------------------
 
