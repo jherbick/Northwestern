@@ -74,6 +74,17 @@ quantile(femaleWhole, probs = c(0.1, 0.25, 0.5, 0.75, 0.9))
 quantile(maleWhole, probs = c(0.1, 0.25, 0.5, 0.75, 0.9))
 quantile(infantWhole, probs = c(0.1, 0.25, 0.5, 0.75, 0.9))
 
+# Create normal quantile plots
+# Create the normal probability plots
+qqnorm(femaleWhole, main = "Female Abalone Whole Weight")
+qqline(femaleWhole, datax = FALSE, distribution = qnorm, probs = c(0.25, 0.75), qtype=7)
+
+qqnorm(maleWhole, main = "Male Abalone Whole Weight")
+qqline(maleWhole, datax = FALSE, distribution = qnorm, probs = c(0.25, 0.75), qtype=7)
+
+qqnorm(infantWhole, main = "Infant Abalone Whole Weight")
+qqline(infantWhole, datax = FALSE, distribution = qnorm, probs = c(0.25, 0.75), qtype=7)
+
 
 # Question 9 - histograms
 #------------------------
@@ -83,6 +94,7 @@ plot1 <- ggplot(data=femaleAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.2,
 plot2 <- ggplot(data=maleAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.2, col="black", fill = "blue") + ggtitle("Male Abalone Whole Weight")
 plot3 <- ggplot(data=infantAbalone) + geom_histogram(aes(x=WHOLE), binwidth=0.1, col="black", fill = "blue") + ggtitle("Infant Abalone Whole Weight")
 # Put 3 histograms onto a single panel
+# Need grid and gridExtra packages here.
 grid.arrange(plot1, plot2, plot3, ncol=3)
 
 
