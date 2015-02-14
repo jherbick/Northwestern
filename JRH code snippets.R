@@ -55,9 +55,52 @@ is.logical(x)
 x <- c(1,2,3,4,5)
 x * 3
 
+# Find the square root of the vector
+sqrt(x)
+
+# Shortcut to create a range of numbers from 1 to 10
+1:10
+
+# If two vectors are of equal length, you can perform operations on the two, element 
+# by element
+
+a <- 1:10
+b <- -5:4
+
+a + b
+# Can do the same with multiplication, raise to a power (^) etc.
+
+# Comparisons also work on vectors.  Result is TRUE or FALSE for each element of the vector.
+a <= 5
+
+# Use all to check if all elements of a vector meet a criteria
+# Use any to check if any of the elements of a vector meet a criteria
+all(a < 5)
+any(a < 5)
+
+# Retrieving elements of a vector
+a[1]     # retrieves the first element from vector a
+a[1:3]   # retrieves consecutive elements from vector a
+a[c(1,4)]# retrieves non consecutive elements from vector a
+
+# You can provide names to elements of a vector in 2 ways:
+
+c(one = "a", two = "b")
+
+# Or, create a vector, then create the names for each element
+w <- 1:3
+names(w) <- c("a", "b", "c")
 
 
- 
+# Read in a .csv file
+# Read in the full abalone dataset
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/abalone.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = " ")
+
+# Validate full dataset per Prof. Martin instructions
+str(fullDataSet)
+
+
 
 
 
