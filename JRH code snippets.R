@@ -241,6 +241,21 @@ t(a)
 a %*% b  # don't know if we need the %%% signs
 
 
+#---------------------------------------------
+# Plotting using ggplot2
+# ~ separating values indicates that you are viewing say price against carat
+# where price is the y value and carat is the x value
+# plot(price~carat, data=diamonds)  this is a base plot, not ggplot2
+# Most important component of ggplot2 is aes which determines the data that gets
+# mapped to which axis
+
+# Saves the basis of a ggplot to a variable.  Then can add layers on top
+# Breaks RATE up by the TYPE attribute, creates boxplots
+g <- ggplot(fullDataSet, aes(x = TYPE, y = RATE))
+g + geom_boxplot(outlier.colour="blue")
+
+
+
 #-------------------------------------
 # Group Manipulation
 # plyr
