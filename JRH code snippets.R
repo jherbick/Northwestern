@@ -50,6 +50,7 @@ z <- "James R. Herbick"
 nchar(z)
 
 # Assigns a factor to a variable
+# These are used for categorical variables.
 y <- factor("data")
 
 # Dates and Times, Date and POSIXct.
