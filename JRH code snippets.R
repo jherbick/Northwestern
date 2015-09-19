@@ -111,7 +111,6 @@ a[1:3]   # retrieves consecutive elements from vector a
 a[c(1,4)]# retrieves non consecutive elements from vector a
 
 # You can provide names to elements of a vector in 2 ways:
-
 c(one = "a", two = "b")
 
 # Or, create a vector, then create the names for each element
@@ -303,9 +302,11 @@ summary(HeightLM)
 
 
 
-
-
-
+# Writing data to text / SAS datastep
+# Need data to be a dataframe
+# Writes data to the R working directory
+a <- data.frame(beer)
+write.foreign(a, "test.txt", "testcode.sas", package="SAS")
 
 
 
