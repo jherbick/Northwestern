@@ -13,13 +13,21 @@ fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Re
 fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = " ")
 
 # Validate full dataset per Prof. Martin instructions
+# Gives metadata of an object
 str(fullDataSet)
 
 # Write a .csv file from a data.frame
-d <- data.frame(sampleDataSet, VOLUME=volume)
-# Create new dataset with the VOLUME attribute
 write.csv(d, "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/volume.csv", row.names=F)
 
+# Create new dataset with the VOLUME attribute
+d <- data.frame(sampleDataSet, VOLUME=volume)
+
+
+# Saving data structures to a file
+save(x,y,z, file="jrh.RData")
+
+# Loading a saved data file
+load("jrh.RData")
 
 #-------------------------------------------------------
 # assigning values to variables:
@@ -84,6 +92,9 @@ x^2
 
 # Find the square root of the vector
 sqrt(x)
+
+#Natural log
+log(x)
 
 # Shortcut to create a range of numbers from 1 to 10
 1:10
@@ -158,11 +169,12 @@ is.na(z)
 is.NULL(d)
 
 
-#---------------------------------------
+#--------------------------------------------------------------
 # Advanced data structures
 # data.frame, matrix, list, array
 # data.frame is like an excel spreadsheet, has columns and rows
 # each column of a data.frame is a vector
+# -------------------------------------------------------------
 x <- 10:8
 y <- -4:-2
 q <- c("Hockey", "Football", "soccer")
@@ -193,7 +205,7 @@ class(theDF)  # tells you the class type
 # ** Accessing columns of a data.frame **
 theDF$Sport   # pick a column by name
 theDF[,c("First", "Sport")]  # get multiple columns by name
-theDF[,3]     # specify no row, 3rd column
+theDF[,3]     # specify no row, 3rd column (entire 3rd column)
 theDF[2,]     # specify the second row, all columns
 theDF[2,3]    # specify the value from the second row, third column
 theDF[2,1:2]  # picks the second row, first and second columns
@@ -238,7 +250,7 @@ dim(a)
 t(a)
 
 # matrix multiplication
-a %*% b  # don't know if we need the %%% signs
+a %*% b  # don't know if we need the %%% signs, I think you do.
 
 
 #---------------------------------------------
@@ -256,11 +268,12 @@ g + geom_boxplot(outlier.colour="blue")
 
 
 
-#-------------------------------------
+#--------------------------------------------------------------------
 # Group Manipulation
-# plyr
+# plyr package
 # ddply - takes a data.frame, splits it according to some variables,
 # performs a desired action, and returns a data.frame
+# -------------------------------------------------------------------
 
 # Sets the sf column to 0 for any row where year < 1954
 # This uses baseball data from the plyr package
@@ -277,9 +290,97 @@ baseball$OBP <- with(baseball, (h+bb+hbp)/(ab+bb+hbp+sf))
 # aggregate
 aggregate(price ~ cut,diamonds, each(mean,median))
 
+# Sort dataset (works, but date field has to be specified with year first format)
+library(stats)
+fullDataSet <- fullDataSet[order(fullDataSet$Date,decreasing=FALSE),]
 
-#------------------------------------------
+
+# --------------------------------------
+# Sampling, train / test splits, sorting
+# --------------------------------------
+
+# Take a random sample
+#----------------------------------
+
+# Create index variable for selecting rows from abalone.csv
+set.seed(123)
+index <- sample(1:nrow(fullDataSet), 500)
+# View the indexes created
+str(index)
+# Pull out the random sample from abalone.csv
+abaloneSample <- fullDataSet[index,]
+
+# Save sample to a file
+write.csv(abaloneSample, "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/mydata.csv", row.names=T)
+
+
+# Sorting
+# -------
+# Sort dataset (works, but date field has to be specified with year first format)
+fullDataSet <- fullDataSet[order(fullDataSet$Date,decreasing=FALSE),]
+
+# Sort randomly
+set.seed(12345)
+# creates new randomized dataset with 1000 random numbers
+credit_rand <- credit[order(runif(1000)),]
+
+
+# -------------------------
+# Exploratory Data Analysis
+# -------------------------
+
+# Numerical Data
+# --------------
+# Show common summary statistics for numeric data
+# five number summary
+summary(HeightLM)
+# Get summary statistics for several numeric variables at once
+summary(usedcars[c("price", "mileage")])
+
+# Return the mean, median
+mean()
+median()
+
+# Span between minimum and maximum values
+# Range displays min and max values
+range()
+
+# Range and diff give the actual range of the data
+diff(range(usedcars$price))
+
+# Interquartile range = middle 50% of data Q1-Q3
+IQR()
+
+# Quantiles, default gives five number summary
+quantile()
+
+# Specify quantiles
+quantile(usedcars$price, probs=c(0.01, 0.99))
+
+# Evenly spaced quantiles
+quantile(usedcars$price, seq(from=0, to=1, by=.20))
+
+
+# Categorical Data
+# ----------------
+
+# Create frequency tables (could feed into a histogram, etc.)
+table()
+
+# Percentages / proportions of items in a table
+x <- table()
+prop.table(x)
+
+# Explore crosstable for SAS type tables
+CrossTable(x=usedcars$model, y=usedcars$conservative)
+
+
+
+
+
+#-------------------------
 # Simple Linear Regression
+# ------------------------
 
 # Read in a .csv file
 # Read in the full dataset
@@ -294,19 +395,132 @@ ggplot(fullDataSet, aes(x=Shoe.Print, y=Height)) + geom_point() + geom_smooth(me
 HeightLM <- lm(Height ~ Shoe.Print, data=fullDataSet)
 HeightLM
 
-# Show additional statistics
-summary(HeightLM)
 
 
 
 
 
 
+# ---------------------------------------
 # Writing data to text / SAS datastep
 # Need data to be a dataframe
 # Writes data to the R working directory
+# ---------------------------------------
 a <- data.frame(beer)
 write.foreign(a, "test.txt", "testcode.sas", package="SAS")
+
+
+
+# **********************
+# TIME SERIES ACTIVITIES
+# **********************
+
+# READING DATA
+
+# Use this function to read time series data in.  Assumes that data for
+# successive time points is in a simple text file with one column.
+# The skip parameter states to skip the first 3 lines of the file.
+kings <- scan("http://robjhyndman.com/tsdldata/misc/kings.dat",skip=3)
+
+# Then need to create / store data in a time series object.
+# frequency parameter defines granularity of data collection....
+# frequency=12 means monthly data, frequency=4 means quarterly data.
+# The start parameter specifies the first year and first interval of the data.
+# This states that the first year of data collection was 1946, first month.
+kingstimeseries <- ts(kings, frequency=12, start=c(1946,1))
+
+
+# quantmod package can be used to download financial timeseries data.
+
+
+
+# PLOTTING DATA
+
+# Plot a time series object
+plot.ts(kingstimeseries)
+
+
+# Forecast using benchmark methods, requires forecast package
+# Average Method
+library(forecast)
+plot(meanf(HOG, 20), main="Mean Forecasts for Harley Davidson")
+
+# Naive Method
+plot(naive(HOG, 20), main="Naive Forecasts for Harley Davidson")
+
+# Drift Method
+plot(rwf(HOG,20, drift=TRUE), main="Drift Forecasts for Harley Davidson")
+
+
+
+# DECOMPOSING TIME SERIES INTO TREND, SEASONAL, AND IRREGULAR COMPONENTS
+
+# Smoothing method to id the trend component... simple moving average
+# Requires TTR package, n=order or span of the moving average
+kingstimeseriesSMA3 <- SMA(kingstimeseries,n=3)
+
+# Seasonal data
+# Returns a list with "seasonal", "trend", and "random" components
+y <- decompose (x)
+plot (y)
+
+# Seasonally adjusting data
+# Take the original data and subtract the seasonal component
+y <- decompose(x)
+z <- x - y$seasonal
+plot(z)
+
+
+# EXPONENTIAL SMOOTHING
+
+# Simple exponential smoothing (SES)
+# Smoothing is controlled by the alpha parameter (which is between 0 and 1)
+# Alpha values close to 0 mean that recent observations are given little weight
+# Use the HoltWinters function for SES, set both parameters to FALSE.
+# Only makes forecasts for the in sample, original dataset....
+rainseriesforecasts <- HoltWinters(rainseries, beta=FALSE, gamma=FALSE)
+
+# use start parameter as below to specify the intial value for the level.
+HoltWinters(rainseries, beta=FALSE, gamma=FALSE, l.start=23.56)
+
+# To get the forecasts use this (stored in $fitted attribute)
+rainseriesforecasts$fitted
+
+# Plot original time series against the forecasts
+plot(rainseriesforecasts)
+
+# Get the Sum Squared Errors for in sample forecasts
+rainseriesforecasts$SSE
+
+# Use this to forecast beyond the time period in the sample data (i.e. on new observations)
+# Requires the forecast package.
+# as its first argument (input), you pass it the predictive model
+# that you have already fitted using the HoltWinters() function.
+# h=how many further time points out to make predictions for
+rainseriesforecasts2 <- forecast.HoltWinters(rainseriesforecasts, h=8)
+
+# Plot forecasts
+plot.forecast(rainseriesforecasts2)
+
+# Get residuals, calculate a correlogram 
+acf(rainseriesforecasts2$residuals, lag.max=20)
+
+
+
+
+
+
+
+
+
+# ****************
+# Machine Learning
+# ****************
+
+# Packages: Rweka
+
+
+
 
 
 
