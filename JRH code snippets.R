@@ -10,7 +10,7 @@
 # Read in a .csv file
 # Read in the full abalone dataset
 fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/abalone.csv"
-fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = " ")
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=TRUE)
 
 # Validate full dataset per Prof. Martin instructions
 # Gives metadata of an object
@@ -76,6 +76,17 @@ is.logical(x)
 
 # does 2 not equal 3?
 2 != 3
+
+
+# MATH
+#-----
+
+# Calculus
+d(expression(expx^2)), "x")  # derivative
+
+integrate(function(x) x^2, 0, 1) #integral
+
+
 
 
 #---------------------------------------------------------
@@ -452,6 +463,16 @@ plot(naive(HOG, 20), main="Naive Forecasts for Harley Davidson")
 plot(rwf(HOG,20, drift=TRUE), main="Drift Forecasts for Harley Davidson")
 
 
+# Notes from Doc Larry
+# I like to look at many variables simultaneously.  Doing so requires visibility in two or 
+# more dimensions.  One of the libraries I use for this is "ResourceSelection".  I then 
+# generate scatterplot matrices, histograms, correlations, and bivariate density plots
+# (contours) on one chart.  This is quite useful, so I thought I would share.  Enjoy!
+library(ResourceSelection)
+kdepairs(USairpollution)
+
+
+
 
 # DECOMPOSING TIME SERIES INTO TREND, SEASONAL, AND IRREGULAR COMPONENTS
 
@@ -469,6 +490,11 @@ plot (y)
 y <- decompose(x)
 z <- x - y$seasonal
 plot(z)
+
+
+# Convert timeseries data into a dataframe
+# From Melissa
+data<-data.frame(Y=as.matrix(fancy), date=as.Date(as.yearmon(time(fancy))))
 
 
 # EXPONENTIAL SMOOTHING
