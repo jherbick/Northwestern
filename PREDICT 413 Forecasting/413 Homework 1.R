@@ -612,7 +612,12 @@ fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", string
 # Try to create Date field as a Date datatype
 fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
 
-# Create timeseries object if needed for tslm
+# Add month and year attributes to use in multiple regression model
+fullDataSet$month <- as.factor(months(fullDataSet$Date, abbreviate = TRUE))
+fullDataSet$year <- as.numeric(format(fullDataSet$Date,'%Y'))
+
+
+# Create timeseries object for tslm
 abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
 
 
@@ -633,8 +638,11 @@ plot(abt.ts, main="ABT stock", ylab="Adj. Close")
 ABT_train <- fullDataSet[c(1:48),]
 ABT_test <- fullDataSet[c(49:60),]
 
+start1 <- as.Date("2010-10-19", format="%Y-%m-%d")
+end1 <- as.Date("2014-09-02", format="%Y-%m-%d")
+
 # For timeseries object
-ABT_train_ts <- window(abt.ts, start=2010, end=2014)
+ABT_train_ts <- window(abt.ts, start=2010, end=2015)
 ABT_test_ts <- window(abt.ts, start=2015)
 
 
@@ -642,6 +650,7 @@ ABT_test_ts <- window(abt.ts, start=2015)
 # 4. Build Models
 # ---------------
 
+library(forecast)
 # Trend and Seasonality using tslm
 model1 <- tslm(ABT_train_ts ~ trend + season)
 
@@ -649,17 +658,16 @@ model1 <- tslm(ABT_train_ts ~ trend + season)
 # Try with true multiple linear regression model
 # This works, just not sure it is the right way to go
 
-a <- as.factor(months(ABT_train$Date, abbreviate = TRUE))
 
-b <- as.factor(format(ABT_train$Date,'%Y'))
-
-model2 <- lm(Adj.Close ~ a + ABT_train$Date, data=ABT_train)
+model2 <- lm(Adj.Close ~ year + month, data=ABT_train)
 
 
 # -------------------------------
 # 5. Check model fit and accuracy
 # -------------------------------
 
+# Model 1 tslm model
+# ------------------
 # Fit statistics on training data
 summary(model1)
 CV(model1)
@@ -676,4 +684,14 @@ plot(fcast1$residuals, type="p", main="Residuals of fcast1")
 Acf(fcast1$residuals, main="ACF for fcast1 Residuals")
 
 
+# Model 2, multiple linear regression
+# -----------------------------------
+
+summary(model2)
+CV(model2)
+
+
+fcast2 <- forecast(model2, newdata=ABT_test)
+
+summary(fcast2)
 
