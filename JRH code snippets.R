@@ -7,6 +7,11 @@
 # To run an entire file, press Ctrl+Shift+S
 
 #------------------------------------------------
+
+# ----------------
+# DATA ACQUISITION
+# ----------------
+
 # Read in a .csv file
 # Read in the full abalone dataset
 fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/abalone.csv"
@@ -29,17 +34,25 @@ save(x,y,z, file="jrh.RData")
 # Loading a saved data file
 load("jrh.RData")
 
-#-------------------------------------------------------
+# -------------------
+# VARIABLE ASSIGNMENT
+# -------------------
+
 # assigning values to variables:
 # R does not require variable types to be declared
 # variables cannot start with a number or an underscore
 # variable names are case sensitive
+
 x <- 2
 assign("x", 2)
 
 # Removing a variable
 rm(x)
 
+
+# ----------
+# DATA TYPES
+# ----------
 # Four main types of data in R:
 # numeric (similar to float or double), character, Date, logical
 # Checking the class of a variable
@@ -78,8 +91,9 @@ is.logical(x)
 2 != 3
 
 
+# ----
 # MATH
-#-----
+# ----
 
 # Calculus
 d(expression(expx^2)), "x")  # derivative
@@ -89,7 +103,9 @@ integrate(function(x) x^2, 0, 1) #integral
 
 
 
-#---------------------------------------------------------
+# -------
+# VECTORS
+# -------
 # Vectors are a collection of data, all of the same type.
 # Vectors cannot be of mixed types.
 # Operations are applied to each element of a vector automatically, 
@@ -139,7 +155,10 @@ c(one = "a", two = "b")
 w <- 1:3
 names(w) <- c("a", "b", "c")
 
-# Factor vectors
+
+# -------
+# FACTORS
+# -------
 # Convert a vector to a factor vector
 # The levels of a factor are the unique values of that factor variable
 q2 <- c(1:10)
@@ -167,7 +186,9 @@ mean(x)   # takes a vector as an argument
 apropos("mea")
 
 
-# Missing Data
+# ------------
+# MISSING DATA
+# ------------
 # R has two types of missing data: NA and NULL
 # NA is for missing data
 # Test each element of a vector for missingness
@@ -180,8 +201,13 @@ is.na(z)
 is.NULL(d)
 
 
-#--------------------------------------------------------------
+# ------------------------
 # Advanced data structures
+# ------------------------
+
+# ----------
+# DATA FRAME
+# ----------
 # data.frame, matrix, list, array
 # data.frame is like an excel spreadsheet, has columns and rows
 # each column of a data.frame is a vector
@@ -232,8 +258,10 @@ baseball$OBP <- with(baseball, (h+bb+hbp)/(ab+bb+hbp+sf))
 
 
 
-#----------------------------------------
-# Lists, store any number of items of any data type
+# -----
+# LISTS
+# -----
+# store any number of items of any data type
 list(1,2,3,"four")
 
 # Create a single element list where the only element is a vector
@@ -245,8 +273,9 @@ list(c(1,2,3))
 ### look into this more
 
 
-#----------------------------------------
-# Matrices
+# --------
+# MATRICES
+# --------
 # Every single element must be the same type, normally numeric
 # Matrices act similar to vectors with element by element addition, subtraction, etc.
 # The nrow, ncol, and dim functions work just like for data.frames
@@ -264,7 +293,19 @@ t(a)
 a %*% b  # don't know if we need the %%% signs, I think you do.
 
 
-#---------------------------------------------
+# -----
+# Dates
+# -----
+
+# Try to create Date field as a Date datatype, from character
+fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
+
+
+# -------------
+# VISUALIZATION
+# -------------
+
+#-----------------------
 # Plotting using ggplot2
 # ~ separating values indicates that you are viewing say price against carat
 # where price is the y value and carat is the x value
@@ -279,8 +320,9 @@ g + geom_boxplot(outlier.colour="blue")
 
 
 
-#--------------------------------------------------------------------
-# Group Manipulation
+# ------------------
+# GROUP MANIPULATION
+# ------------------
 # plyr package
 # ddply - takes a data.frame, splits it according to some variables,
 # performs a desired action, and returns a data.frame
@@ -325,6 +367,7 @@ abaloneSample <- fullDataSet[index,]
 write.csv(abaloneSample, "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 401/Report 1/mydata.csv", row.names=T)
 
 
+# -------
 # Sorting
 # -------
 # Sort dataset (works, but date field has to be specified with year first format)
@@ -422,9 +465,9 @@ write.foreign(a, "test.txt", "testcode.sas", package="SAS")
 
 
 
-# **********************
-# TIME SERIES ACTIVITIES
-# **********************
+# ----------------
+# TIME SERIES DATA
+# ----------------
 
 # READING DATA
 
@@ -470,8 +513,6 @@ plot(rwf(HOG,20, drift=TRUE), main="Drift Forecasts for Harley Davidson")
 # (contours) on one chart.  This is quite useful, so I thought I would share.  Enjoy!
 library(ResourceSelection)
 kdepairs(USairpollution)
-
-
 
 
 # DECOMPOSING TIME SERIES INTO TREND, SEASONAL, AND IRREGULAR COMPONENTS
@@ -532,16 +573,9 @@ plot.forecast(rainseriesforecasts2)
 acf(rainseriesforecasts2$residuals, lag.max=20)
 
 
-
-
-
-
-
-
-
-# ****************
+# ----------------
 # Machine Learning
-# ****************
+# ----------------
 
 # Packages: Rweka
 
