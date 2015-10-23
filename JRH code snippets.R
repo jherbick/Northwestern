@@ -506,7 +506,8 @@ library(quantmod)   # download financial timeseries data
 library(ResourceSelection)   # visualizations, many dimensions
 library(moments)    # skewness, kurtosis, normality
 library(car)   # transformations
-library(rgl)  # FOR 3D PLOTTING ***
+library(rgl)  # FOR 3D PLOTTING
+library(x12)  # for X-12 ARIMA decomposition... link to US Census 
 
 
 # READING DATA
@@ -543,6 +544,8 @@ table()
 # LAYOUT TELLS R WHERE GRAPHS WILL GO ON THE SCREEN
 layout(matrix(c(1,2,3,4, nrow=2))
          
+# How to get multiple plots in the same window
+par(mfrow=c(2,2))  #  I think does a 2x2 matrix of plots
 
 
 # Forecast using benchmark methods, requires forecast package
@@ -558,6 +561,7 @@ plot(rwf(HOG,20, drift=TRUE), main="Drift Forecasts for Harley Davidson")
 
 
 # LINEAR REGRESSION
+# -----------------
 
 fit$residuals  # (where fit is the model)(gives residuals)
 fit$fitted.values  #(equals the fitted values)
@@ -595,22 +599,82 @@ library(ResourceSelection)
 kdepairs(USairpollution)
 
 
+# ----------------------------------------------------------------------
 # DECOMPOSING TIME SERIES INTO TREND, SEASONAL, AND IRREGULAR COMPONENTS
-
+# ----------------------------------------------------------------------
 # Smoothing method to id the trend component... simple moving average
 # Requires TTR package, n=order or span of the moving average
 kingstimeseriesSMA3 <- SMA(kingstimeseries,n=3)
 
-# Seasonal data
+
+# Classical Decomposition (into components)
+# ** (not recommended) **
+# -----------------------------------------
 # Returns a list with "seasonal", "trend", and "random" components
-y <- decompose (x)
+y <- decompose (x, type=c("additive", "multiplicative"))
 plot (y)
+
+
+# Currently no R package for x-12 ARIMA, but this package
+# connects to US Census software
+library(x12)
+
+
+# STL Decomposition (** very roubust and versitle)
+# ------------------------------------------------
+# These options control how rapidly trend and season components can change
+# small values allow more rapid changes.
+# t.window = trend window
+# s.window = season window
+fit <- stl(elecequip, t.window=15, s.window="periodic", robust=TRUE)
+plot(fit)
+
+
+# Forecasting with STL Decomposition
+# ----------------------------------
+fit <- stl(elecequip, t.window=15, s.window="periodic", robust=TRUE)
+eeadj <- seasadj(fit)  # seasonally adjusts the data
+# plots a naive forecast of the seasonally adjusted data
+plot(naive(eeadj), ylab="New Orders Index", main="Naive forecasts of seasonally adjusted data")
+
+# I guess this is forecasting the deconstructed data
+# using the naive method for the seasonal part....
+fcast <- forecast(fit, method="naive")  # fit is the deconstructed data
+plot(fcast, ylab="New Orders Index")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Seasonally adjusting data
 # Take the original data and subtract the seasonal component
 y <- decompose(x)
 z <- x - y$seasonal
 plot(z)
+
+
+# Moving Averages
+# ---------------
+
+# Plot original data, with red trend component using a moving average
+plot(elecsales)
+lines(ma(elecsales,5), col="red")   # m=5... i.e. how many points to average
+
+
+# Calculate the moving average values
+beer2 <- window(ausbeer, start=1992)
+ma4 <- ma(beer2, order=4, centre=FALSE)
+ma2x4 <- ma(beer2, order=4, centre=TRUE)  # centered moving average of order 4
+
+
 
 
 # Convert timeseries data into a dataframe
