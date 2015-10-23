@@ -383,6 +383,16 @@ credit_rand <- credit[order(runif(1000)),]
 # Exploratory Data Analysis
 # -------------------------
 
+# Give structure / characteristics of an object
+str()
+
+# Lists attributes of an object
+attributes()
+
+# Lists the variables of an object... I think....
+ls()
+
+
 # Numerical Data
 # --------------
 # Show common summary statistics for numeric data
@@ -432,9 +442,9 @@ CrossTable(x=usedcars$model, y=usedcars$conservative)
 
 
 
-#-------------------------
-# Simple Linear Regression
-# ------------------------
+# -----------------
+# Linear Regression
+# -----------------
 
 # Read in a .csv file
 # Read in the full dataset
@@ -449,6 +459,11 @@ ggplot(fullDataSet, aes(x=Shoe.Print, y=Height)) + geom_point() + geom_smooth(me
 HeightLM <- lm(Height ~ Shoe.Print, data=fullDataSet)
 HeightLM
 
+# Provides coefficients, etc.
+summary(HeightLM)
+
+# Provides fit statistics (MAE, CV, etc.)
+CV(HeightLM)
 
 
 
@@ -469,6 +484,31 @@ write.foreign(a, "test.txt", "testcode.sas", package="SAS")
 # TIME SERIES DATA
 # ----------------
 
+# USEFUL COMMANDS
+# ---------------
+# - COPY TO CLIPBOARD THE DELIMITED DATA FILE
+# - THEN TYPE IN THE DATA....
+MYDATA=READ.DELIM("CLIPBOARD")
+
+# COMMAND THAT MAKES THE VARIABLES AVAILABLE IN THE WORKSPACE....
+# CAN ADDRESS THESE VARIABLES JUST BY TYPING THEM IN....
+# I THINK FOR DATAFRAMES... ALLOWS YOU TO REFERENCE COLUMNS W/O $
+ATTACH (MYDATA) 
+
+# - rnorm - returns random numbers between 1 and 100
+
+
+# ---------------
+# Useful Packages
+# ---------------
+library(forecast)   # for forecasts
+library(quantmod)   # download financial timeseries data
+library(ResourceSelection)   # visualizations, many dimensions
+library(moments)    # skewness, kurtosis, normality
+library(car)   # transformations
+library(rgl)  # FOR 3D PLOTTING ***
+
+
 # READING DATA
 
 # Use this function to read time series data in.  Assumes that data for
@@ -484,7 +524,7 @@ kings <- scan("http://robjhyndman.com/tsdldata/misc/kings.dat",skip=3)
 kingstimeseries <- ts(kings, frequency=12, start=c(1946,1))
 
 
-# quantmod package can be used to download financial timeseries data.
+
 
 
 
@@ -492,6 +532,17 @@ kingstimeseries <- ts(kings, frequency=12, start=c(1946,1))
 
 # Plot a time series object
 plot.ts(kingstimeseries)
+
+# COMMAND... PROVIDES SCATTER PLOT
+pairs() 
+
+# tabulates.... frequencies... COUNTS
+table()  
+
+
+# LAYOUT TELLS R WHERE GRAPHS WILL GO ON THE SCREEN
+layout(matrix(c(1,2,3,4, nrow=2))
+         
 
 
 # Forecast using benchmark methods, requires forecast package
@@ -504,6 +555,35 @@ plot(naive(HOG, 20), main="Naive Forecasts for Harley Davidson")
 
 # Drift Method
 plot(rwf(HOG,20, drift=TRUE), main="Drift Forecasts for Harley Davidson")
+
+
+# LINEAR REGRESSION
+
+fit$residuals  # (where fit is the model)(gives residuals)
+fit$fitted.values  #(equals the fitted values)
+summary(fit$residuals)    # where fit is the linear regression model....
+
+# forecast an lm model on new data
+forecast()
+
+
+# FITS THE BEST FIT REGRESSION LINE FOR THAT MODEL
+# adds a straight line through current plot
+abline()
+abline(fit, col="red")
+
+# car package - for variable transformations
+# result is lambda... ideal transformation
+# to reverse a power transform raise value to the 1/lambda power
+powerTransform()
+
+
+# LIKELIHOOD RATIO TEST... BASED ON CHI SQUARED DISTRIBUTION
+# IF P VALUE IS SMALL, REJECT NULL HYPOTHESIS 
+testTransform(MYT, MYT$LAMBDA)
+
+# FIT STATISTICS FOR LM MODEL
+CV()
 
 
 # Notes from Doc Larry
@@ -571,6 +651,12 @@ plot.forecast(rainseriesforecasts2)
 
 # Get residuals, calculate a correlogram 
 acf(rainseriesforecasts2$residuals, lag.max=20)
+
+
+# ARIMA
+auto.arima()    # p. 227 in book
+
+
 
 
 # ----------------
