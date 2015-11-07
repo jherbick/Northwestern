@@ -239,19 +239,30 @@ accuracy(fcast2, olympic_test)
 # ---------
 library(fpp)
 
+# ------------
 # Question 5.1
+# ------------
 
-#a
+# ------
+# part a
+# ------
 plot(fancy, main="Plot of Fancy dataset")
 
-#c
+# ------
+# part c
+# ------
+
+# Take logarithms of original dataset
 log.fancy <- log(fancy)
 plot(log.fancy, main="Plot of Log-Fancy dataset")
 
-# **** use log.fancy ???? ****
+# Turn timeseries object into dataframe, to add dummy variables.
 # From Melissa
+
+# original data
 data <- data.frame(Y=as.matrix(fancy), date=as.Date(as.yearmon(time(fancy))))
 
+# log of original data
 data2 <- data.frame(Y=as.numeric(log.fancy), date=as.Date(as.yearmon(time(log.fancy))))
 
 
@@ -269,10 +280,10 @@ model1 <- tslm(log.fancy ~ trend + season)
 summary(model1)
 
 # This seems to work... need to understand if it is really doing
-# what I want it to....
+# what I want it to.... 
 model2 <- lm(Y ~ date + x + month, data=data2)
-
 summary(model2)
+
 
 #d
 plot(model2)
@@ -280,15 +291,339 @@ plot(data2$date, model2$residuals, main="model2 - Residuals v. Time")
 
 
 #e
+# check this code to make sure it is doing the right thing...
 boxplot(model2$residuals ~ data2$month, main="Boxplot of model2 Residuals by Month")
 
 
-#g
+#g - durbin watson statistic
+
+# Durbin-Watson test for lag-1 autocorrelation
+# Symmetric around 2, if no autocorrelation
+dwtest(model2, alt="two.sided")
+
+# Just checking the ACF for visual on autocorrelation
+acf(model2$residuals)
+
+
+
 
 #h - not working... yet
-a <- as.Date("1994-01-01":"1996-12-01")
-d <- data.frame()
-fcast2 <- forecast(model2, newdata=)
+# a <- as.Date("1994-01-01":"1996-12-01")
+# d <- data.frame()
+
+# - COPY TO CLIPBOARD THE DELIMITED DATA FILE
+# - THEN TYPE IN THE DATA....
+z=read.delim(file="clipboard", header=TRUE, sep="\t")
+
+# Try to create Date field as a Date datatype, from character
+z$date <- as.Date(z$date, format="%m/%d/%Y")
+
+# Forecast... is this working??? Looks like it is.....
+fcast2 <- forecast(model2, newdata=z)
+
+plot(data2$Y ~ data2$date, type="l")
+lines(z$date, fcast2$mean, col="red")  # works but plot doesn't extend ....
+
+# Plots the forecast (log scale)
+plot(fcast2$mean ~ z$date, type="l")
+
+
+# part i - (reverse transformation)
+
+# Grab the point forecasts and the upper / lower data
+fcast2.predictions <- data.frame(fcast2)
+
+# Reverse the transformation
+fcast2.reversed <- exp(fcast2.predictions)
+
+
+# ------------
+# Question 5.2
+# ------------
+
+library(fpp)
+library(ggplot2)
+data(package="fma")  # check out the datasets available
+
+texasgas$City <- c("Amarillo", "Borger", "Dalhart", "Shamrock", "Royalty", "Texarkana", "Corpus Christi", "Palestine", "Marhall", "Iowa Park", "Palo Pinto", "Millsap", "Memphis", "Granger", "Llano", "Brownsville", "Mercedes", "Karnes City", "Mathis", "La Pryor")
+
+# a.
+attach(texasgas)
+g <- ggplot(texasgas, aes(x = price, y = consumption))
+g + geom_point() + labs(title="Natural Gas for Texas Towns")
+g + geom_point() + labs(title="Natural Gas for Texas Towns") + geom_line()
+
+
+# c.
+
+# model1
+exp.texasgas <- data.frame(price=exp(price),consumption=exp(consumption), City)
+model1 <- lm(exp.texasgas$consumption ~ exp.texasgas$price)
+summary(model1)
+CV(model1)
+plot(model1$residuals)
+
+# model1b (take exponent only of price)
+model1b <- lm(texasgas$consumption ~ exp(texasgas$price))
+summary(model1b)
+CV(model1b)
+plot(model1b$residuals)
+
+
+
+# model2
+texasgas$p.less.60 <- as.factor(ifelse(texasgas$price<=60, 1, 0))
+texasgas$P1 <- ifelse(texasgas$price<=60, texasgas$price, 0)
+
+texasgas$p.larger.60 <- as.factor(ifelse(texasgas$price>60, 1, 0))
+texasgas$P2 <- ifelse(texasgas$price>60, texasgas$price, 0)
+
+attach(texasgas)
+# 0 + as first terms removes the intercept from the model
+model2 <- lm(consumption ~ 0 + p.less.60 + P1 + p.larger.60 + P2)
+summary(model2)
+CV(model2)
+plot(model2$residuals)
+
+
+# model3
+texasgas$price.square <- texasgas$price^2
+
+attach(texasgas)
+model3 <- lm(consumption ~ price + price.square)
+summary(model3)
+CV(model3)
+plot(model3$residuals)
+
+
+# e)
+new.data <- data.frame(price=c(40, 60, 80, 100, 120), consumption=c(NA, NA, NA, NA, NA))
+
+new.data$p.less.60 <- as.factor(ifelse(new.data$price<=60, 1, 0))
+new.data$P1 <- ifelse(new.data$price<=60, new.data$price, 0)
+
+new.data$p.larger.60 <- as.factor(ifelse(new.data$price>60, 1, 0))
+new.data$P2 <- ifelse(new.data$price>60, new.data$price, 0)
+
+
+pred1 <- forecast(model2, newdata=new.data)
+plot(texasgas$consumption ~ texasgas$price)
+points(new.data$price, pred1$mean, col="purple")
+lines(new.data$price, pred1$mean, col="red")
+
+# f
+plot(new.data$price, pred1$mean)
+lines(new.data$price, pred1$upper[,2], col="blue")
+lines(new.data$price, pred1$lower[,2], col="blue")
+
+
+# g
+
+cor(texasgas$price, texasgas$price.square)
+
+
+# ---------
+# CHAPTER 6
+# ---------
+
+# 6.1
+
+
+
+
+
+# 6.2
+
+#a
+plot(plastics, main="Plastics Timeseries", xlab="year number", ylab="sales (000s)")
+
+# b
+classical <- decompose(plastics, type="multiplicative")
+plot(classical)
+
+# d
+season.adj <- seasadj(classical)
+plot(season.adj)
+
+
+#e
+
+plastics2 <- plastics
+plastics2[12] <- plastics2[12] + 500
+
+classical2 <- decompose(plastics2, type="multiplicative")
+
+season.adj2 <- seasadj(classical2)
+plot(season.adj2)
+
+
+#f
+
+plastics3 <- plastics
+plastics4 <- plastics
+
+plastics3[30] <- plastics3[30] + 500
+
+classical3 <- decompose(plastics3, type="multiplicative")
+
+season.adj3 <- seasadj(classical3)
+plot(season.adj3)
+
+
+plastics4[57] <- plastics4[57] + 500
+
+classical4 <- decompose(plastics4, type="multiplicative")
+
+season.adj4 <- seasadj(classical4)
+plot(season.adj4)
+
+
+# g
+
+pred1 <- rwf(season.adj, h=24, drift=TRUE)
+plot(pred1)
+
+
+
+# h
+
+# Do I have to do a random walk with drift on the seasonal component....
+pred2 <- rwf(classical$seasonal, h=24, drift=TRUE)
+
+# but, I want to add back in season for the predicted values....
+# is this right????
+original2 <- pred2$mean*pred1$mean
+
+# This gets me the original timeseries... this is correct
+original1 <- classical$seasonal*season.adj
+
+
+# ---------
+# CHAPTER 7
+# ---------
+
+# QUESTION 7.1
+# ------------
+
+# a
+str(books)
+head(books)
+plot(books, xlab="days", main="Daily Book Sales")
+
+
+#b
+
+# PAPERBACK
+# ---------
+# small alpha gives more weight to past observations
+# large alpha gives more weight to recent observations
+fit1 <- ses(books[,1], alpha=0.25, h=4, level=c(80, 95), initial="simple")
+fit2 <- ses(books[,1], alpha=0.5, h=4, level=c(80, 95), initial="simple")
+fit3 <- ses(books[,1], alpha=0.75, h=4, level=c(80, 95), initial="simple")
+
+
+# How to get multiple plots in the same window
+par(mfrow=c(1,3))  #  I think does a 2x2 matrix of plots
+
+plot(fit1, main="Alpha = 0.25")
+plot(fit2, main="Alpha = 0.5")
+plot(fit3, main="Alpha = 0.75")
+
+
+SSE <- c(sum(fit1$residuals^2), sum(fit2$residuals^2), sum(fit3$residuals^2))
+alpha <- c(0.25, 0.5, 0.75)
+df1 <- data.frame(SSE, alpha)
+
+# Saves the basis of a ggplot to a variable.  Then can add layers on top
+# Breaks RATE up by the TYPE attribute, creates boxplots
+library(ggplot2)
+g <- ggplot(df1, aes(x = alpha, y = SSE))
+g + geom_point(color = "purple", size=4)
+
+
+# HARDCOVER
+# ---------
+
+# small alpha gives more weight to past observations
+# large alpha gives more weight to recent observations
+fit1b <- ses(books[,2], alpha=0.25, h=4, level=c(80, 95), initial="simple")
+fit2b <- ses(books[,2], alpha=0.5, h=4, level=c(80, 95), initial="simple")
+fit3b <- ses(books[,2], alpha=0.75, h=4, level=c(80, 95), initial="simple")
+
+
+# How to get multiple plots in the same window
+par(mfrow=c(1,3))  
+
+plot(fit1b, main="Alpha = 0.25")
+plot(fit2b, main="Alpha = 0.5")
+plot(fit3b, main="Alpha = 0.75")
+
+
+SSEb <- c(sum(fit1b$residuals^2), sum(fit2b$residuals^2), sum(fit3b$residuals^2))
+alphab <- c(0.25, 0.5, 0.75)
+df1b <- data.frame(SSEb, alphab)
+
+# Saves the basis of a ggplot to a variable.  Then can add layers on top
+# Breaks RATE up by the TYPE attribute, creates boxplots
+library(ggplot2)
+g2 <- ggplot(df1b, aes(x = alphab, y = SSEb))
+g2 + geom_point(color = "purple", size=4)
+
+
+
+
+
+
+# c
+
+# PAPERBACK
+# ---------
+fit4 <- ses(books[,1], h=4, level=c(80, 95), initial="simple")
+fit4$model
+
+par(mfrow=c(1,1))
+plot(fit4)
+
+
+# HARDCOVER
+# ---------
+fit4b <- ses(books[,2], h=4, level=c(80, 95), initial="simple")
+fit4b$model
+
+par(mfrow=c(1,1))
+plot(fit4b)
+
+
+
+
+
+# d
+
+# PAPERBACK
+# ---------
+fit5 <- ses(books[,1], h=4, level=c(80, 95), initial="optimal")
+fit5$model
+
+par(mfrow=c(1,1))
+plot(fit5)
+
+
+# HARDCOVER
+# ---------
+fit5b <- ses(books[,2], h=4, level=c(80, 95), initial="optimal")
+fit5b$model
+
+par(mfrow=c(1,1))
+plot(fit5b)
+
+
+# QUESTION 7.2
+# ------------
+
+
+
+
+
 
 
 
@@ -629,6 +964,12 @@ abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
 plot(abt.ts, main="ABT stock", ylab="Adj. Close")
 
 
+# Experiment with timeseries decomposition
+# Seasonal data
+# Returns a list with "seasonal", "trend", and "random" components
+y <- decompose (abt.ts, type=c("additive", "multiplicative"))
+plot (y)
+
 
 # ---------------------
 # 3. Train / Test Split
@@ -638,8 +979,6 @@ plot(abt.ts, main="ABT stock", ylab="Adj. Close")
 ABT_train <- fullDataSet[c(1:48),]
 ABT_test <- fullDataSet[c(49:60),]
 
-start1 <- as.Date("2010-10-19", format="%Y-%m-%d")
-end1 <- as.Date("2014-09-02", format="%Y-%m-%d")
 
 # For timeseries object
 ABT_train_ts <- window(abt.ts, start=2010, end=2015)
@@ -657,8 +996,6 @@ model1 <- tslm(ABT_train_ts ~ trend + season)
 
 # Try with true multiple linear regression model
 # This works, just not sure it is the right way to go
-
-
 model2 <- lm(Adj.Close ~ year + month, data=ABT_train)
 
 
@@ -694,4 +1031,171 @@ CV(model2)
 fcast2 <- forecast(model2, newdata=ABT_test)
 
 summary(fcast2)
+
+
+# -----------------------
+# WEEK 6 DISCUSSION BOARD
+# -----------------------
+
+# Continue with week 5 data....
+
+
+# ----------------
+# 1.  Acquire Data
+# ----------------
+
+# Read in a .csv file
+# Read in the ABT stock data
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/WEEK 5/ABT.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+# Try to create Date field as a Date datatype
+fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
+
+# Add month and year attributes to use in multiple regression model
+fullDataSet$month <- as.factor(months(fullDataSet$Date, abbreviate = TRUE))
+fullDataSet$year <- as.numeric(format(fullDataSet$Date,'%Y'))
+
+
+# Create timeseries object for tslm
+abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
+
+
+
+# -------------------------
+# 2, Exploratory Data Analysis
+# -------------------------
+
+# Plot the timeseries
+plot(abt.ts, main="ABT stock", ylab="Adj. Close")
+
+
+# Timeseries decomposition
+# ------------------------
+# Classical decomposition (* NOT RECOMMENDED APPROACH *
+# Returns a list with "seasonal", "trend", and "random" components
+
+classical.decomp <- decompose (abt.ts, type=c("additive", "multiplicative"))
+plot (classical.decomp)
+
+
+# Since data is monthly, can look at X12 ARIMA decomposition.
+# But, no R package, check in SAS?
+
+
+# STL decomposition
+
+stl.decomp <- stl(abt.ts, t.window=10, s.window="periodic", robust=TRUE)
+plot(stl.decomp)
+
+# Trend / Cycle component along with original time series
+plot(abt.ts, col="gray", main="ABT Adjusted Closing Price", ylab="Adj Closing Price", xlab="")
+lines(stl.decomp$time.series[,2], col="red", ylab="Trend")
+
+
+# Plot the seasonally adjusted data
+library(forecast)
+plot(abt.ts, col="gray", main="ABT Adjusted Closing Price", ylab="Adj Closing Price", xlab="")
+lines(seasadj(stl.decomp), col="red", ylab="Seasonally Adjusted")
+
+
+
+
+# Analyze additive vs multiplicative decomposition.
+# lambda... ideal transformation
+# to reverse a power transform raise value to the 1/lambda power
+
+# Use BoxCox to determine proper lambda value.
+lambda2 <- BoxCox.lambda(abt.ts)  # 0.3688217
+
+# Plot transformed timeseries data
+plot(BoxCox(abt.ts, lambda2), main="ABT data with BoxCox Transform")
+
+# Raise original data to the lambda power to get transformed data...
+# This matches the plot above... so this is working.
+abt.ts.boxcox <- (abt.ts^0.3688217-1)/0.3688217
+plot(abt.ts.boxcox, main="ABT data with manual BoxCox Transform")
+
+
+stl.decomp.boxcox <- stl(abt.ts.boxcox, t.window=10, s.window="periodic", robust=TRUE)
+plot(stl.decomp.boxcox)
+
+
+
+
+
+
+
+
+
+
+
+# ---------------------
+# 3. Train / Test Split
+# ---------------------
+
+# For dataframe
+ABT_train <- fullDataSet[c(1:48),]
+ABT_test <- fullDataSet[c(49:60),]
+
+
+# For timeseries object
+ABT_train_ts <- window(abt.ts, start=2010, end=2015)
+ABT_test_ts <- window(abt.ts, start=2015)
+
+
+
+
+# -----------------------
+# WEEK 7 DISCUSSION BOARD
+# -----------------------
+
+# Continue with week 5 data....
+
+# ----------------
+# 1.  Acquire Data
+# ----------------
+
+# Read in a .csv file
+# Read in the ABT stock data
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/WEEK 5/ABT.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+# Try to create Date field as a Date datatype
+fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
+
+# Create timeseries object
+abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
+
+
+# --------------------
+# Holt-Winters Methods
+# --------------------
+
+# Create the forecasts
+library(forecast)
+fit1 <- hw(abt.ts, seasonal="additive")
+fit2 <- hw(abt.ts, seasonal="multiplicative")
+
+# Plot the forecasts, with original data
+plot(fit2, ylab="ABT Adj Close", plot.conf=FALSE, type="o", fcol="white", xlab="Year")
+lines(fitted(fit1), col="red", lty=2)
+lines(fitted(fit2), col="green", lty=2)
+lines(fit1$mean, type="o", col="red")
+lines(fit2$mean, type="o", col="green")
+legend("topleft", lty=1, pch=1, col=1:3, c("data", "Holt Winters' Additive", "Holt Winters' Multiplicative"))
+
+
+# Plot the components of each model
+
+states <- cbind(fit1$model$states[,1:3], fit2$model$states[,1:3])
+colnames(states) <- c("level", "slope", "seasonal", "level", "slope", "seasonal")
+plot(states, xlab="Year")
+
+
+
+
+
+
+
 
