@@ -502,7 +502,7 @@ original1 <- classical$seasonal*season.adj
 # CHAPTER 7
 # ---------
 
-# QUESTION 7.1
+# QUESTION 1
 # ------------
 
 # a
@@ -617,18 +617,518 @@ par(mfrow=c(1,1))
 plot(fit5b)
 
 
-# QUESTION 7.2
+# QUESTION 2
 # ------------
 
+# a
+
+# Paperback
+# used alpha calcualted above
+fit10 <- holt(books[,1], alpha=0.2125, beta=0.25, initial="simple", h=4)
+fit10$model
+
+plot(fit10)
+
+
+# hardcover
+# used alpha calcualted above
+fit10b <- holt(books[,2], alpha=0.3473, beta=0.25, initial="simple", h=4)
+fit10b$model
+
+plot(fit10b)
+
+
+
+# b
+
+# SES
+accuracy(fit1)
+accuracy(fit1b)
+
+
+# Holt
+accuracy(fit10)
+accuracy(fit10b)
+
+
+# c
+
+# SES
+fit1
+fit1b
+
+# Holt
+fit10
+fit10b
+
+
+# Manual calculation for paperback using SES
+x <- books[30,1]*.25
+
+y <- 0
+t <- 1
+
+for (i in 29:1)
+{
+    y <- y + (books[i,1])*(.25)*(.75)^t
+    t <- t+1
+    print(y)
+}
+
+x+y
+
+
+# Manual calculation for hardcover using SES
+x <- books[30,2]*.25
+
+y <- 0
+t <- 1
+
+for (i in 29:1)
+{
+    y <- y + (books[i,2])*(.25)*(.75)^t
+    t <- t+1
+    print(y)
+}
+
+x+y
+
+
+# Manual calculation for paperback using Holt
+
+
+L0 <- 199
+B0 <- -27
+
+alpha <- 0.2125
+beta <- 0.25
+e <- c(0)
+
+e[1] <- 27
+lt[1] <- L0 + B0 + alpha*e[1]
+bt[1] <- B0 + alpha*beta*e[1]
+
+
+yhat[1] <- lt1 + 1*bt1
+
+
+for (i in 2:30)
+{
+    
+    e[i] <- books[i,1] - fit10$fitted[i]
+    lt[i] <- lt[i-1] + bt[i-1] + alpha*e[i]
+    bt[i] <- bt[i-1] + alpha*beta*e[i]
+   
+    yhat[i] <- lt[i] + i*bt[i] 
+}
+
+
+# Manual calculation for hardcover using Holt
+
+
+L0 <- 139
+B0 <- -11
+
+alpha <- 0.3473
+beta <- 0.25
+e <- c(0)
+
+e[1] <- 11
+lt[1] <- L0 + B0 + alpha*e[1]
+bt[1] <- B0 + alpha*beta*e[1]
+
+
+yhat[1] <- lt1 + 1*bt1
+
+
+for (i in 2:30)
+{
+    
+    e[i] <- books[i,2] - fit10b$fitted[i]
+    lt[i] <- lt[i-1] + bt[i-1] + alpha*e[i]
+    bt[i] <- bt[i-1] + alpha*beta*e[i]
+    
+    yhat[i] <- lt[i] + i*bt[i] 
+}
 
 
 
 
 
 
+# ----------
+# Question 3
+# -----------
+
+# a)        
+plot(ukcars, main="ukcars Dataset Plot")    
+
+
+# b)
+# STL decomposition
+uk.stl <- stl(ukcars, t.window=15, s.window="periodic", robust=TRUE)
+plot(uk.stl, main="STL Decomposition of ukcars")
+
+# obtain seasonally adjusted data
+uk.seasadj <- seasadj(uk.stl)
+plot(uk.seasadj, main="Seasonally Adjusted ukcars")
+
+
+# c)
+
+# 2 year forecasts with Holt-Winters additive damped method
+uk.fcast1 <- hw(uk.seasadj, h=8, damped=TRUE, seasonal="additive")
+plot(uk.fcast1)
+
+# reseasonalize the data
+
+
+# d)
+uk.fcast2 <- holt(uk.seasadj, h=8, alpha=0.8, beta=0.2, initial="simple")
+plot(uk.fcast2)
+
+
+# e)
+uk.fcast3 <- ets(uk.seasadj)
+
+
+# f)
+
+# g)
+
+
+# Question 4
+# ----------
+
+# a)
+plot(visitors, main="Visitors Dataset")
+
+# b)
+# 2 year forecasts with Holt-Winters multiplicative method
+visit.fcast1 <- hw(visitors, h=24, seasonal="multiplicative")
+plot(visit.fcast1)
+
+# d)
+# Holt-Winters multiplicative damped method
+visit.fcast2 <- hw(visitors, h=24, seasonal="multiplicative", damped=TRUE)
+plot(visit.fcast2)
+
+# e)
+
+# f)
+
+# Holt-Winters multiplicative
+visit.fcast3 <- hw(visitors, h=24, seasonal="multiplicative")
+plot(visit.fcast3$residuals, type="p", main="Holt-Winters Mult Residuals") # scatterplot of residuals.
+plot(visit.fcast3)
+
+# ETS model
+visit.fcast4 <- ets(visitors)
+plot(visit.fcast4$residuals, type="p", main="ETS Residuals") # scatterplot of residuals.
+plot(visit.fcast4)
+
+# Box-Cox Transformation of original dataset
+visit.lambda <- BoxCox.lambda(visitors)  # 0.2775249
+visit.transform <- BoxCox(visitors, 0.2775249)
+plot(visit.transform, main="BoxCox Transformed Visitors Dataset")
+
+# Additive ETS, Box-Cox transformed series
+visit.fcast5 <- ets(visit.transform, model="AAA", damped=FALSE, additive.only = TRUE)
+plot(visit.fcast5$residuals, type="p", main="Additive ETS Residuals - BoxCox Transform") # scatterplot of residuals.
+plot(visit.fcast5)
+
+# Seasonal Naive, Box-Cox transformed series
+# which model do I use here???
+
+# STL decomposition applied to BoxCox, followed by ETS
+visit.stl <- stl(visit.transform, t.window=15, s.window="periodic", robust=TRUE)
+plot(visit.stl, main="STL Decomposition of visitors")
+
+# Ensure 1 plot per window
+par(mfrow=c(1,1))  
+
+# obtain seasonally adjusted data
+visit.seasadj <- seasadj(visit.stl)
+plot(visit.seasadj, main="Seasonally Adjusted visitors")
+
+# ETS model
+visit.fcast6 <- ets(visit.seasadj)
+plot(visit.fcast6$residuals, type="p", main="ETS Residuals, STL Decomposed - BoxCox Transform") # scatterplot of residuals.
+plot(visit.fcast6)
 
 
 
+
+
+# ---------------------------------------------------------
+# ** QUESTION 7.3  - wrong question from hardcover book. **
+# ---------------------------------------------------------
+
+str(eggs)
+eggs
+plot(eggs, main="Price of Eggs 1900 - 1993")
+
+
+# regular and exponential, not damped
+# gives weights to distant observations
+egg1 <- holt(eggs, alpha=0.25, beta=0.25, initial="simple", h=100)
+# had to add na.remove=true
+egg2 <- holt(eggs, alpha=0.25, beta=0.25, initial="simple", h=100, exponential=TRUE, na.remove(TRUE))
+
+# damped
+egg3 <- holt(eggs, alpha=0.25, beta=0.25, initial="simple", h=100, damped = TRUE)
+egg4 <- holt(eggs, alpha=0.25, beta=0.25, initial="simple", h=100, exponential=TRUE, damped = TRUE, na.remove(TRUE))
+
+
+# change alpha parameter values
+# weights most recent observations the heaviest
+# regular and exponential, not damped
+egg5 <- holt(eggs, alpha=0.8, beta=0.25, initial="simple", h=100)
+egg6 <- holt(eggs, alpha=0.8, beta=0.25, initial="simple", h=100, exponential=TRUE, na.remove(TRUE))
+
+# change alpha parameter damped
+egg7 <- holt(eggs, alpha=0.8, beta=0.25, initial="simple", h=100, damped = TRUE)
+egg8 <- holt(eggs, alpha=0.8, beta=0.25, initial="simple", h=100, exponential=TRUE, damped = TRUE, na.remove(TRUE))
+
+
+# change beta parameter values
+# increases the trend component
+# regular and exponential, not damped
+egg9 <- holt(eggs, alpha=0.25, beta=0.75, initial="simple", h=100)
+egg10 <- holt(eggs, alpha=0.25, beta=0.75, initial="simple", h=100, exponential=TRUE)
+
+# not working
+# damped
+#egg11 <- holt(eggs, alpha=0.25, beta=0.75, initial="simple", h=100, damped=TRUE)
+#egg12 <- holt(eggs, alpha=0.25, beta=0.75, initial="simple", h=100, exponential=TRUE, damped=TRUE)
+
+
+# change both alpha and beta parameters
+egg13 <- holt(eggs, alpha=0.8, beta=0.75, initial="simple", h=100)
+egg14 <- holt(eggs, alpha=0.8, beta=0.75, initial="simple", h=100, exponential=TRUE, na.remove(TRUE))
+
+# damped
+egg15 <- holt(eggs, alpha=0.8, beta=0.75, initial="simple", h=100, damped = TRUE)
+egg16 <- holt(eggs, alpha=0.8, beta=0.75, initial="simple", h=100, exponential=TRUE, damped = TRUE)
+
+
+# not working (first two rows work)
+a <- data.frame(accuracy(egg1))
+a <- rbind(a, accuracy(egg2))
+rownames(a) <- c("egg1", "egg2")
+# accuracy(egg3), accuracy(egg4), accuracy(egg5), accuracy(egg6), accuracy(egg7), accuracy(egg8), accuracy(egg9), accuracy(egg10), accuracy(egg13), accuracy(egg14), accuracy(egg15), accuracy(egg16))
+# rownames(a) <- c("egg1", "egg2", "egg3", "egg4", "egg5", "egg6", "egg7", "egg8", "egg9", "egg10", "egg13", "egg14", "egg15", "egg16")
+
+
+accuracy(egg1)
+accuracy(egg2)
+accuracy(egg3)
+accuracy(egg4)
+accuracy(egg5)
+accuracy(egg6)
+accuracy(egg7)
+accuracy(egg8)
+accuracy(egg9)
+accuracy(egg10)
+accuracy(eegg13)
+accuracy(egg14) 
+accuracy(egg15)
+accuracy(egg16)
+
+
+
+# ---------
+# CHAPTER 8
+# ---------
+library(fpp)
+
+# QUESTION 5
+# ----------
+
+# a) 
+y <- ts(numeric(100))
+e <- rnorm(100)
+for (i in 2:100)
+    y[i] <- 0.6*y[i-1] + e[i]
+
+# b)
+
+# plot part a
+plot(y, main="0.6")
+
+# change value to 0.2
+y <- ts(numeric(100))
+for (i in 2:100)
+    y[i] <- 0.2*y[i-1] + e[i]
+
+plot(y, main="0.2")
+
+# change value to 0.9
+y <- ts(numeric(100))
+for (i in 2:100)
+    y[i] <- 0.9*y[i-1] + e[i]
+
+plot(y, main="0.9")
+
+
+# c)
+# build MA(1) model
+y2 <- ts(numeric(200))
+e2 <- rnorm(200)
+for (i in 2:200)
+    y2[i] <- e2[i] + 0.6*e2[i-1]
+
+
+# d)
+plot(y2, main="MA(1) - 0.6")
+
+y2 <- ts(numeric(200))
+e2 <- rnorm(200)
+for (i in 2:200)
+    y2[i] <- e2[i] + 0.2*e2[i-1]
+
+plot(y2, main="MA(1) - 0.2")
+
+
+y2 <- ts(numeric(200))
+e2 <- rnorm(200)
+for (i in 2:200)
+    y2[i] <- e2[i] + 0.9*e2[i-1]
+
+plot(y2, main="MA(1) - 0.9")
+
+
+# e)
+
+y4 <- ts(numeric(100))
+e4 <- rnorm(100)
+for (i in 2:100)
+    y4[i] <- 0.6*y4[i-1] + e4[i] + e4[i] + 0.6*e4[i-1]
+
+
+
+# f)
+
+y3 <- ts(numeric(100))
+e3 <- rnorm(100)
+for (i in 3:100)
+    y3[i] <- 0.8*y3[i-1] + 0.3*y3[i-2] + e3[i]
+
+
+# g)
+
+plot(y3, main="AR(2) Model")
+
+plot(y4, main="ARMA(1,1) Model")
+
+
+
+# ----------
+# QUESTION 6
+# ----------
+
+# a)
+# Plot the data
+plot(wmurders, main="wmurders dataset")
+
+# Determine if and the number of differencing needed
+# Run tests for differencing
+adf.test(wmurders, alternative = "stationary")
+kpss.test(wmurders)
+
+ndiffs(wmurders)   # 2
+
+# difference data
+diff2<- diff(wmurders, differences=2)
+
+# plot diff2 acf and pacf
+tsdisplay(diff2, main="2 Differences")
+
+
+
+
+
+# d)
+manual <- Arima(wmurders, order = c(1,2,0), include.constant = TRUE)
+par(mfrow=c(1,1))
+plot(manual$residuals, type="p", main="ARIMA(1,2,0) residuals")
+
+accuracy(manual)
+
+
+# e)
+fcast1 <- forecast(manual, h=3)
+plot(fcast1)
+
+
+# g)
+x <- auto.arima(wmurders, seasonal=FALSE)
+plot(x$residuals, type="p", main="ARIMA(1,2,1) residuals")
+
+accuracy(x)
+
+
+# ----------
+# QUESTION 7
+# ----------
+
+# a)
+plot(austourists, main="Austrialian Tourists")
+
+# b,c)
+tsdisplay(austourists)
+
+# d)
+tour.diff1 <- diff(austourists, 4)
+tsdisplay(tour.diff1)
+
+tour.2 <- Arima(austourists, order=c(0,1,0), seasonal=c(1,1,0))
+accuracy(tour.2)
+
+
+# e)
+tour.1 <- auto.arima(austourists)
+accuracy(tour.1)
+
+
+# ----------
+# QUESTION 8
+# ----------
+
+plot(usmelec)
+
+# a)
+plot(usmelec, main="US Elec Data w/ 12-Month MA")
+lines(ma(usmelec, order=12), col="red")
+
+# b)
+lambda <- BoxCox.lambda(usmelec)  # -0.4772402
+elec.trans <- BoxCox(usmelec, lambda)
+plot(elec.trans, main="Transformed Elec Data")
+
+# c)
+# perform tests for stationary data
+z <- adf.test(elec.trans, alternative = "stationary")
+z2 <- kpss.test(elec.trans)
+
+# determine number of differences needed
+num.diff <- ndiffs(elec.trans)
+elec.trans.diff <- diff(elec.trans, differences=1)
+plot(elec.trans.diff, main="1 Diff of BoxCox Transformed Data")
+
+
+# d)
+tsdisplay(elec.trans.diff)
+mod1 <- Arima(elec.trans.diff, order=c(0,0,0), seasonal = c(0,0,4))
+
+mod2 <- auto.arima(elec.trans.diff)  # doesn't look like it's working
+
+
+
+    
+    
+    
+    
 # ---------------
 # Midterm Project
 # ---------------
@@ -785,6 +1285,93 @@ Acf(smoke_drift_model_gender$residuals, main="ACF of Drift Method Residuals")
 # Multiple Linear Regression
 
 Acf(smoke_fcast$residuals, main="ACF of Multiple Regression Residuals")
+
+
+
+
+# -------------
+# FINAL PROJECT
+# -------------
+
+# ----------------
+# 1.  ACQUIRE DATA
+# ----------------
+
+# Try reading in John's new file....
+# ----------------------------------
+# Read in a .csv file
+# Need to convert date to date format for the dataframe
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/Final Project/John/Final_Data.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+
+
+
+# ---------------------------------
+
+# Read in a .csv file
+# Need to convert date to date format for the dataframe
+# fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/Final Project/John/environment_baseline.csv"
+# fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+
+# Create time series object for untransformed CO2 emissions.
+CO2.ts.raw <- ts(fullDataSet$EmissionsDataRaw, frequency=12, start=c(1973,1))
+
+# Create time series object for transformed CO2 emissions by population.
+CO2.ts <- ts(fullDataSet$EmissionsData, frequency=12, start=c(1973,1))
+
+
+# ------
+# 2. EDA
+# ------
+
+plot(CO2.ts.raw, main="CO2 Emissions - Residential")
+plot(CO2.ts, main="Transformed CO2 Emissions")
+
+
+# ---------------------------
+# 3. TRAIN / VAL / TEST SPLIT
+# ---------------------------
+
+# 50%, 25%, 25%
+# train <- ts(co2.ts.pop[1:243], frequency=12, start=c(1973,1))
+# val <- ts(co2.ts.pop[244:364], frequency=12, start=c(1993,4))
+# test <- ts(co2.ts.pop[365:486], frequency=12, start=c(2003,5))
+
+# Use John's Split
+# Split time series into training (51.85%), valiation (24.69%) and test sets (23.46%).
+CO2.train <- window(CO2.ts, start=c(1973, 01), end=c(1993, 12), frequency=12)
+CO2.validation <- window(CO2.ts, start=c(1994, 01), end=c(2003, 12), frequency=12)
+CO2.test <- window(CO2.ts, start=c(2004, 01), end=c(2013, 06), frequency=12)
+
+
+
+# ---------------
+# 4. BUILD MODELS
+# ---------------
+
+# BASELINE - Drift method / random walk forecast
+ranwalk <- rwf(CO2.train, h=12, drift=TRUE)
+plot(ranwalk, main="Baseline Random Walk Forecast with Drift")
+accuracy(ranwalk)
+
+
+# SEASONAL DECOMPOSITION - STL Decomposition
+# Looks like seasonality with non-linear trend....
+CO2.stl <- stl(CO2.train, t.window=13, s.window="periodic", robust=TRUE)
+plot(CO2.stl)
+
+
+
+
+# XREG WITH EXTERNAL DATA, LAGGED ????
+
+
+
+
+
+
 
 
 
@@ -1193,7 +1780,182 @@ colnames(states) <- c("level", "slope", "seasonal", "level", "slope", "seasonal"
 plot(states, xlab="Year")
 
 
+# -----------------
+# WEEK 8 DISCUSSION
+# -----------------
 
+# Continue with week 5 data....
+
+# ----------------
+# 1.  Acquire Data
+# ----------------
+
+# Read in a .csv file
+# Read in the ABT stock data
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/WEEK 5/ABT.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+# Try to create Date field as a Date datatype
+fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
+
+# Create timeseries object
+abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
+
+
+# ---------------------
+# 2. Train / Test Split
+# ---------------------
+
+# For dataframe
+ABT_train <- fullDataSet[c(1:48),]
+ABT_test <- fullDataSet[c(49:60),]
+
+
+# For timeseries object
+ABT_train_ts <- window(abt.ts, start=2010, end=2015)
+ABT_test_ts <- window(abt.ts, start=2015)
+
+
+# ---------------
+# 3. BUILD MODELS
+# ---------------
+
+library(forecast)
+fit <- auto.arima(ABT_train_ts, seasonal=FALSE)
+
+# plot forecast
+plot(forecast(fit, h=10))
+
+
+# -----------
+# 4. TEST FIT
+# -----------
+
+par(mfrow=c(1,2))
+Acf(ABT_train_ts)
+Pacf(ABT_train_ts)
+
+
+# -----------------
+# WEEK 9 DISCUSSION
+# -----------------
+
+# Build 3 models on ABT, use 80/20 data split for train / test
+
+
+# ----------------
+# 1.  Acquire Data
+# ----------------
+
+# Read in a .csv file
+# Read in the ABT stock data
+fileLocation <- "C:/Users/James R. Herbick/Documents/Northwestern/PREDICT 413_TIME_SERIES/WEEK 5/ABT.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE)
+
+# Try to create Date field as a Date datatype
+fullDataSet$Date <- as.Date(fullDataSet$Date, format="%m/%d/%Y")
+
+# Create timeseries object
+abt.ts <- ts(fullDataSet$Adj.Close, frequency=12, start=c(2010,10))
+
+
+# ---------------------
+# 2. Train / Test Split
+# ---------------------
+
+# For dataframe
+ABT_train <- fullDataSet[c(1:48),]
+ABT_test <- fullDataSet[c(49:60),]
+
+
+# For timeseries object
+ABT_train_ts <- window(abt.ts, start=2010, end=2015)
+ABT_test_ts <- window(abt.ts, start=2015)
+
+
+# ------
+# 3. EDA
+# ------
+
+# Plot original timeseries
+plot(abt.ts, main="ABT stock", ylab="Adj. Close")
+
+# Seasonally decompose training data using STL
+abt.stl <- stl(ABT_train_ts, t.window=10, s.window="periodic", robust=TRUE)
+plot(abt.stl, main="STL Decomp of ABT Training Data")
+
+
+# -----------------------
+# 4. BUILD / CHOSE MODELS
+# -----------------------
+
+# Model 1 - STL Decomposition
+fcast1 <- forecast(abt.stl, method="ets", h=12)
+plot(fcast1, main="Model 1: STL Decomp using ETS Method")
+
+
+# Model 2 - auto.arima
+library(forecast)
+fit2 <- auto.arima(ABT_train_ts, seasonal=TRUE)
+fit2$aicc  #  170.6206
+
+# plot forecast
+fcast2 <- forecast(fit2, h=12)  # ARIMA(1,1,0) with drift
+plot(fcast2, main="Model 2: auto.arima w/ Seasonality")
+
+
+# Model 3 - manually selected ARIMA
+
+# Step 1- transformation / data stationary?
+# No significant fluctuations in variance, will not perform transformations
+# Determine if data is stationary and number of differences
+adf.test(ABT_train_ts, alternative="stationary")
+kpss.test(ABT_train_ts)
+
+# Step 2 - difference the data
+ndiffs(ABT_train_ts)  #1
+
+# Doesn't seem to be an overwhelming seasonal component, so just 1 reg diff
+abt.diff <- diff(ABT_train_ts)
+
+# Step 3 - Review ACF / PACF plots
+tsdisplay(abt.diff)
+
+# Step 4 - Build model and tweak alternatives
+# Check AICc
+fit3 <- Arima(ABT_train_ts, order = c(0,1,0), seasonal = c(0,0,0))
+fit3$aicc   # 175.0459
+
+fit4 <- Arima(ABT_train_ts, order = c(1,1,1), seasonal = c(0,0,0))
+fit4$aicc   # 179.0017
+
+fit5 <- Arima(ABT_train_ts, order = c(0,1,0), seasonal = c(1,0,0))
+fit5$aicc   # 177.0852
+
+fit6 <- Arima(ABT_train_ts, order = c(1,1,0), seasonal = c(1,0,0))
+fit6$aicc   # 178.8849
+
+fit7 <- Arima(ABT_train_ts, order = c(0,1,0), seasonal = c(0,0,0), include.constant = TRUE)
+fit7$aicc   # 171.216
+
+
+# -----------
+# 4. TEST FIT
+# -----------
+
+# Model 1
+accuracy(fcast1, ABT_test_ts)
+
+# Model 2
+accuracy(fcast2, ABT_test_ts)
+fit2$aicc  #  170.6206
+
+# Model 7
+# plot forecast
+fcast3 <- forecast(fit7, h=12)  # ARIMA(0,1,0) with constant
+plot(fcast2, main="Model 7: Manual Arima w/ Constant")
+accuracy(fcast3, ABT_test_ts)
+fit7$aicc   # 171.216
 
 
 
