@@ -8,6 +8,36 @@
 
 #------------------------------------------------
 
+# ----------
+# Large data
+# ----------
+
+memory.limit(size=7500)   # increase memory capacity
+
+memory.limit()   # check memory limit
+
+
+# -----------------
+# CHUNK UP THE DATA
+# -----------------
+# Read in a .csv file
+# Read in the full abalone dataset
+fileLocation <- "//Wdmycloud/james/nyc311calls.csv"
+fullDataSet <- read.table (file = fileLocation, header = TRUE, sep = ",", stringsAsFactors=FALSE, skip=0, nrows=1000)
+
+# have to set header=false, but then lose column names... how to combine?
+fullDataSet2 <- read.table (file = fileLocation, header = FALSE, sep = ",", stringsAsFactors=FALSE, skip=1000, nrows=300)
+
+# rename the variable names in subsequent dataframes
+names(fullDataSet2) <- names(fullDataSet)
+
+# combine datasets 1&2
+a <- rbind(fullDataSet, fullDataSet2)
+
+
+
+
+
 # ----------------
 # DATA ACQUISITION
 # ----------------
@@ -29,10 +59,31 @@ d <- data.frame(sampleDataSet, VOLUME=volume)
 
 
 # Saving data structures to a file
-save(x,y,z, file="jrh.RData")
+save(x,y,z, file="data/jrh.RData")
 
 # Loading a saved data file
-load("jrh.RData")
+load("data/jrh.RData")
+
+
+# - copying data from a .csv, copied to the CLIPBOARD, to a dataframe.
+z=read.delim(file="clipboard", header=TRUE, sep="\t")
+
+
+# ---------------
+# ODBC CONNECTION
+# ---------------
+
+# server, port, and db have to be filled in on the DSN
+library(RODBC)
+db <- odbcConnect("NZSQL", uid="jherbic", pwd="")
+
+test1 <- sqlQuery(db, "select * from HMDM.LDA_CONS_ACCT_D_V LIMIT 10 OFFSET 1;", stringsAsFactors=FALSE)
+
+odbcClose(db)
+
+
+
+
 
 # -------------------
 # VARIABLE ASSIGNMENT
@@ -74,12 +125,47 @@ nchar(z)
 # These are used for categorical variables.
 y <- factor("data")
 
+# ifelse assignment
+texasgas$p.less.60 <- ifelse(texasgas$price<=60, 1, 0)
+
+
+# ----------------------------------
 # Dates and Times, Date and POSIXct.
+# ----------------------------------
 # Date stores only the date, the other stores date and time.
 # Stored as numeric values (days or seconds) since 1/1/1970
 # Use the lubridate and chron packages for date manipulation
 date1 <- as.Date("2015-01-02")
 date2 <- as.POSIXct("2015-01-02 09:18")
+
+# aggregating dates / times to different levels of granularity...
+# this may only be for OHLC, financial / stock data....
+# see period.apply function from xts package to .... 
+library(xts)
+to.weekly(x,drop.time=TRUE,name,...)
+to.monthly(x,indexAt='yearmon',drop.time=TRUE,name,...)
+to.quarterly(x,indexAt='yearqtr',drop.time=TRUE,name,...)
+to.yearly(x,drop.time=TRUE,name,...)
+
+# Manipulating dates (roll up to monthly, quarterly data)
+# http://www.inside-r.org/packages/cran/xts/docs/to.period
+
+# puts data in quarterly format???
+library(zoo)
+yq <- as.yearqtr(Data$date, format = "%Y-%m-%d")
+yq
+
+# More on date aggregations...
+# the width parameter is how many obs to average (i.e. 24 is hourly)
+# the by parameter is how many obs to average
+# the FUN parameter is what function (i.e. mean)
+library(PerformanceAnalytics)
+tstSeries.daily<-apply.rolling(tstSeries,width=24,by=24, FUN="mean") # get the mean of each of the 24 hours intervals.
+tstSeries.daily<-tstSeries.daily[complete.cases(tstSeries.daily),] # remove rows with NAs.
+rownames(tstSeries.daily)<-as.Date(rownames(tstSeries.daily)) # remove the time part of the index.
+print(tstSeries.daily)
+
+
 
 #Logicals.  True=1, False=0
 is.logical(x)
@@ -120,8 +206,11 @@ x^2
 # Find the square root of the vector
 sqrt(x)
 
-#Natural log
-log(x)
+# Natural log
+y <- log(x)
+
+# Exponential function (reverse of natural log)(e^x)
+x <- exp(y)
 
 # Shortcut to create a range of numbers from 1 to 10
 1:10
@@ -466,7 +555,12 @@ summary(HeightLM)
 CV(HeightLM)
 
 
-
+attach(texasgas)
+# 0 + as first terms removes the intercept from the model
+model2 <- lm(consumption ~ 0 + p.less.60 + P1 + p.larger.60 + P2)
+summary(model2)
+CV(model2)
+plot(model2$residuals)
 
 
 
@@ -488,12 +582,13 @@ write.foreign(a, "test.txt", "testcode.sas", package="SAS")
 # ---------------
 # - COPY TO CLIPBOARD THE DELIMITED DATA FILE
 # - THEN TYPE IN THE DATA....
-MYDATA=READ.DELIM("CLIPBOARD")
+z=read.delim(file="clipboard", header=TRUE, sep="\t")
+
 
 # COMMAND THAT MAKES THE VARIABLES AVAILABLE IN THE WORKSPACE....
 # CAN ADDRESS THESE VARIABLES JUST BY TYPING THEM IN....
 # I THINK FOR DATAFRAMES... ALLOWS YOU TO REFERENCE COLUMNS W/O $
-ATTACH (MYDATA) 
+attach(MYDATA) 
 
 # - rnorm - returns random numbers between 1 and 100
 
@@ -502,7 +597,7 @@ ATTACH (MYDATA)
 # Useful Packages
 # ---------------
 library(forecast)   # for forecasts
-library(quantmod)   # download financial timeseries data
+library(quantmod)   # download financial timeseries data (yahoo mostly)
 library(ResourceSelection)   # visualizations, many dimensions
 library(moments)    # skewness, kurtosis, normality
 library(car)   # transformations
@@ -525,8 +620,13 @@ kings <- scan("http://robjhyndman.com/tsdldata/misc/kings.dat",skip=3)
 kingstimeseries <- ts(kings, frequency=12, start=c(1946,1))
 
 
+# ----------------------------------------
+# Convert timeseries data into a dataframe
+# ----------------------------------------
+# From Melissa
+data<-data.frame(Y=as.matrix(fancy), date=as.Date(as.yearmon(time(fancy))))
 
-
+ 
 
 
 # PLOTTING DATA
@@ -570,6 +670,8 @@ summary(fit$residuals)    # where fit is the linear regression model....
 # forecast an lm model on new data
 forecast()
 
+fcast2$mean  # the mean attribute of a forecast are the point forecasts...
+
 
 # FITS THE BEST FIT REGRESSION LINE FOR THAT MODEL
 # adds a straight line through current plot
@@ -599,9 +701,22 @@ library(ResourceSelection)
 kdepairs(USairpollution)
 
 
+# AUTOCORRELATION
+acf()   # produces acf of * residuals *
+
+# Durbin-Watson test for lag-1 autocorrelation
+# Symmetric around 2, if no autocorrelation
+# The null hypothesis is that there is no lag-1 autocorrelation in the residuals.
+# A small p-value indicates there is significant autocorrelation remaining in the residuals.
+dwtest(model2, alt="two.sided")
+
+
 # ----------------------------------------------------------------------
 # DECOMPOSING TIME SERIES INTO TREND, SEASONAL, AND IRREGULAR COMPONENTS
 # ----------------------------------------------------------------------
+
+# Key is determining whether to use an additive or multiplicative model.
+
 # Smoothing method to id the trend component... simple moving average
 # Requires TTR package, n=order or span of the moving average
 kingstimeseriesSMA3 <- SMA(kingstimeseries,n=3)
@@ -620,8 +735,9 @@ plot (y)
 library(x12)
 
 
-# STL Decomposition (** very roubust and versitle)
-# ------------------------------------------------
+# ---------------------------------------------------
+# STL Decomposition (** very roubust and versitle **)
+# ---------------------------------------------------
 # These options control how rapidly trend and season components can change
 # small values allow more rapid changes.
 # t.window = trend window
@@ -629,6 +745,42 @@ library(x12)
 fit <- stl(elecequip, t.window=15, s.window="periodic", robust=TRUE)
 plot(fit)
 
+
+# STL decomposition
+stl.decomp <- stl(abt.ts, t.window=10, s.window="periodic", robust=TRUE)
+plot(stl.decomp)
+
+
+# We can access the individual components (trend/cycle, seasonal, irregular)
+# after doing an stl decomposition through the $timeseries variable of the output....  
+# column 1 is the seasonal component, column 2 is the trend, column 3 is the remainder.  
+# If we had done transformations, I guess it is here that we would undo them....
+
+
+# Plot Trend / Cycle component along with original time series
+plot(abt.ts, col="gray", main="ABT Adjusted Closing Price", ylab="Adj Closing Price", xlab="")
+lines(stl.decomp$time.series[,2], col="red", ylab="Trend")
+# $timeseris variable contains the seasonal, trend, and remainder
+# components of the decomposed timeseries object.
+
+
+# Plot the seasonally adjusted data along with original time series
+library(forecast)
+plot(abt.ts, col="gray", main="ABT Adjusted Closing Price", ylab="Adj Closing Price", xlab="")
+lines(seasadj(stl.decomp), col="red", ylab="Seasonally Adjusted")
+
+
+# We don't need seasaonlity to be statistically significant to be practically
+# relevant in analysis.  But if you are interested, a visual way to run median tests
+# is notched boxplots.  In this example, I used the following code (Doc Larry): 
+
+boxplot(mydata$FFund~mydata$Month,notch=T,col="red")
+
+# If the notches do not overlap, there is strong evidence of median
+# differences.  The picture happens to be of accumulation rates for a bond
+# fund (13 years of data).  In this case, it is obvious that there are
+# statistically significant differences between May and July and near differences 
+# elsewhere.  That said, we have the issue of multiple comparisons...  
 
 # Forecasting with STL Decomposition
 # ----------------------------------
@@ -676,10 +828,6 @@ ma2x4 <- ma(beer2, order=4, centre=TRUE)  # centered moving average of order 4
 
 
 
-
-# Convert timeseries data into a dataframe
-# From Melissa
-data<-data.frame(Y=as.matrix(fancy), date=as.Date(as.yearmon(time(fancy))))
 
 
 # EXPONENTIAL SMOOTHING
