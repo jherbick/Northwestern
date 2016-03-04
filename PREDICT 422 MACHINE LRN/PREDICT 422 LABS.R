@@ -1076,3 +1076,555 @@ table(education,I(wage>250))
 gam.lr.s=gam(I(wage>250)~year+s(age,df=5)+education,family=binomial,data=Wage,subset=(education!="1. < HS Grad"))
 plot(gam.lr.s,se=T,col="green")
 
+
+# ---------
+# CHAPTER 4
+# ---------
+
+# Chapter 4 Lab: Logistic Regression, LDA, QDA, and KNN
+
+# The Stock Market Data
+library(ISLR)
+
+# Exploratory Data Analysis
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+pairs(Smarket)  # creates scatterplot matrix
+cor(Smarket)
+cor(Smarket[,-9])
+
+attach(Smarket)
+plot(Volume)
+
+
+# -------------------
+# Logistic Regression
+# -------------------
+
+# fit a logistic regression model to the data
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,data=Smarket,family=binomial)
+summary(glm.fit)
+
+# Look at the logistic regression model coefficients
+coef(glm.fit)
+summary(glm.fit)$coef
+
+# Look at the p values for the coefficients
+summary(glm.fit)$coef[,4]
+
+# Make predictions... type="response" ensures probabilities are returned.
+glm.probs=predict(glm.fit,type="response")
+
+# Examine first 10 probabilities
+glm.probs[1:10]
+contrasts(Direction)  # lets you see how dummy variables are coded in R.
+
+# Convert probabilities to an Up or Down... > .5 = Up
+# rep command repeats Down 1250 times....
+glm.pred=rep("Down",1250)
+glm.pred[glm.probs>.5]="Up"
+
+# Examine frequencies
+table(glm.pred,Direction)  # confusion matrix
+(507+145)/1250  # Calculate overall prediction accuracy
+
+mean(glm.pred==Direction)  # fraction of correct predictions
+
+# Train / test split
+train=(Year<2005) # Train set = years 2001 - 2004
+Smarket.2005=Smarket[!train,]  # items that are not train... i.e. test
+dim(Smarket.2005)
+Direction.2005=Direction[!train]
+
+
+# Fit logistic regression model on only the training set
+# using the subset command
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,data=Smarket,family=binomial,subset=train)
+
+# Make predictions on the test set
+glm.probs=predict(glm.fit,Smarket.2005,type="response")
+
+# Change predictions to Ups and Downs
+glm.pred=rep("Down",252)
+glm.pred[glm.probs>.5]="Up"
+
+# Confusion matrix and percentages of accurate predictions
+table(glm.pred,Direction.2005)
+mean(glm.pred==Direction.2005)
+mean(glm.pred!=Direction.2005)
+
+# Refit the model using only lag1 and lag2
+glm.fit=glm(Direction~Lag1+Lag2,data=Smarket,family=binomial,subset=train)
+
+# Make predictions on test set
+glm.probs=predict(glm.fit,Smarket.2005,type="response")
+
+# Change probabilities to Ups and Downs
+glm.pred=rep("Down",252)
+glm.pred[glm.probs>.5]="Up"
+
+# Confusion Matrix and prediction accuracies...
+table(glm.pred,Direction.2005)
+mean(glm.pred==Direction.2005)
+106/(106+76)
+
+# Predict up or down for specific values of lag1 and lag2
+predict(glm.fit,newdata=data.frame(Lag1=c(1.2,1.5),Lag2=c(1.1,-0.8)),type="response")
+
+
+# ---------------------------------------------------
+# Linear Discriminant Analysis (LDA)  (>2 categories)
+# ---------------------------------------------------
+
+library(MASS)
+
+# Fit LDA model
+lda.fit=lda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+lda.fit
+plot(lda.fit)
+
+# Predict with LDA model
+# lda.pred$class = the predicted categories
+# lda.pred$posterior = the probabilities of being in each category
+lda.pred=predict(lda.fit, Smarket.2005)
+names(lda.pred)
+
+# Stores the predicted categories
+lda.class=lda.pred$class
+table(lda.class,Direction.2005)  # confusion matrix
+mean(lda.class==Direction.2005)
+
+# Apply the 50% threshold to the posterior probabilities 
+# Allows us to recreate the values in lda.pred$class
+sum(lda.pred$posterior[,1]>=.5)  # count how many items predicted as Up
+sum(lda.pred$posterior[,1]<.5)
+
+# Check first 20 rows of the probabilities and ups and downs
+lda.pred$posterior[1:20,1]
+lda.class[1:20]
+sum(lda.pred$posterior[,1]>.9)  # check to see how many probabilities are > .9
+
+
+# -------------------------------------
+# Quadratic Discriminant Analysis (QDA)
+# -------------------------------------
+
+# Fit a QDA model
+qda.fit=qda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+qda.fit
+
+# Make QDA predictions
+qda.class=predict(qda.fit,Smarket.2005)$class
+
+# Confusion matrix
+table(qda.class,Direction.2005)
+mean(qda.class==Direction.2005)
+
+
+# -------------------
+# K-Nearest Neighbors
+# -------------------
+
+library(class)
+
+# Create matrices of predictor variables 
+# for train and test
+# Create vector with the response values for the training set.
+train.X=cbind(Lag1,Lag2)[train,]
+test.X=cbind(Lag1,Lag2)[!train,]
+train.Direction=Direction[train]
+
+# Set seed to be able to reproduce results
+# Apply KNN to the datasets
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Direction,k=1)  # k=1
+table(knn.pred,Direction.2005)
+(83+43)/252
+
+knn.pred=knn(train.X,test.X,train.Direction,k=3)  # k=3
+table(knn.pred,Direction.2005)
+mean(knn.pred==Direction.2005)
+
+
+# -----------------------------------------------
+# An Application of KNN to Caravan Insurance Data
+# -----------------------------------------------
+
+dim(Caravan)
+attach(Caravan)
+summary(Purchase)
+348/5822
+
+# The scale of the predictors matters for KNN
+# Standardize the variables.
+standardized.X=scale(Caravan[,-86])  # exclude column 86, the response variable
+
+# Check the variances of the data before and after
+# standardization
+var(Caravan[,1])
+var(Caravan[,2])
+var(standardized.X[,1])
+var(standardized.X[,2])
+
+# Train / test split
+test=1:1000
+train.X=standardized.X[-test,]
+test.X=standardized.X[test,]
+train.Y=Purchase[-test]
+test.Y=Purchase[test]
+
+# Fit KNN model with K=1
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Y,k=1)
+mean(test.Y!=knn.pred)
+mean(test.Y!="No")
+table(knn.pred,test.Y)
+9/(68+9)  
+
+# K=3
+knn.pred=knn(train.X,test.X,train.Y,k=3)
+table(knn.pred,test.Y)
+5/26  # focus on percentage of correctly identified yeses
+
+# K=5
+knn.pred=knn(train.X,test.X,train.Y,k=5)
+table(knn.pred,test.Y)
+4/15   # focus on percentage of correctly identified yeses
+
+# Fit a logistic regression model to compare
+# use .25 as the probability cutoff (after standard .5 is examined)
+glm.fit=glm(Purchase~.,data=Caravan,family=binomial,subset=-test)
+glm.probs=predict(glm.fit,Caravan[test,],type="response")  # outputs probabilities
+glm.pred=rep("No",1000)
+glm.pred[glm.probs>.5]="Yes"
+table(glm.pred,test.Y)
+
+# Change cutoff to .25
+glm.pred=rep("No",1000)
+glm.pred[glm.probs>.25]="Yes"
+table(glm.pred,test.Y)
+11/(22+11)
+
+
+
+
+# --------------------------
+# Chapter 8 - Decision Trees
+# --------------------------
+
+
+
+# Chapter 8 Lab: Decision Trees
+
+# ----------------------------
+# Fitting Classification Trees
+# ----------------------------
+
+library(tree)
+library(ISLR)
+attach(Carseats)
+
+# Create a binary response variable, attach to carseats dataframe
+High=ifelse(Sales<=8,"No","Yes")
+Carseats=data.frame(Carseats,High)
+
+# Fit a classification tree 
+tree.carseats=tree(High~.-Sales,Carseats)
+summary(tree.carseats)
+
+# Display the tree graphically
+plot(tree.carseats)
+text(tree.carseats,pretty=0)
+tree.carseats
+
+# split data into train / test
+set.seed(2)
+train=sample(1:nrow(Carseats), 200)
+Carseats.test=Carseats[-train,]
+High.test=High[-train]
+
+# Test model on test dataset
+tree.carseats=tree(High~.-Sales,Carseats,subset=train)
+tree.pred=predict(tree.carseats,Carseats.test,type="class")  # class means return the actual classification prediction
+table(tree.pred,High.test)
+(86+57)/200
+
+
+# Prune the tree
+set.seed(3)
+cv.carseats=cv.tree(tree.carseats,FUN=prune.misclass) # FUN=prune.misclass here states to use the classification error rate  to guide pruning
+names(cv.carseats)                                    # default is for deviance to guide....    
+cv.carseats
+
+# plot the cross validation error rate by tree size and k value
+par(mfrow=c(1,2))
+plot(cv.carseats$size,cv.carseats$dev,type="b")
+plot(cv.carseats$k,cv.carseats$dev,type="b")
+
+# Prune to the best model based on graphs
+# The 9-node tree was the best.
+prune.carseats=prune.misclass(tree.carseats,best=9)
+plot(prune.carseats)
+text(prune.carseats,pretty=0)
+
+# Check test set performance of the 9-node tree
+tree.pred=predict(prune.carseats,Carseats.test,type="class")
+table(tree.pred,High.test)
+(94+60)/200
+
+# Test a larger tree (15 nodes)... bigger tree, worse performance.
+prune.carseats=prune.misclass(tree.carseats,best=15)
+plot(prune.carseats)
+text(prune.carseats,pretty=0)
+tree.pred=predict(prune.carseats,Carseats.test,type="class")
+table(tree.pred,High.test)
+(86+62)/200
+
+
+# ------------------------
+# Fitting Regression Trees
+# ------------------------
+
+library(MASS)
+set.seed(1)
+
+# Create training set, create regression tree
+train = sample(1:nrow(Boston), nrow(Boston)/2)
+tree.boston=tree(medv~.,Boston,subset=train)
+summary(tree.boston)
+
+# Plot the tree
+plot(tree.boston)
+text(tree.boston,pretty=0)
+
+# See if pruning will help performance
+cv.boston=cv.tree(tree.boston)
+plot(cv.boston$size,cv.boston$dev,type='b')
+
+# Alternate way to prune the tree
+prune.boston=prune.tree(tree.boston,best=5)
+plot(prune.boston)
+text(prune.boston,pretty=0)
+
+# Make predictions on the test set with the unpruned tree
+yhat=predict(tree.boston,newdata=Boston[-train,])
+boston.test=Boston[-train,"medv"]
+plot(yhat,boston.test)
+abline(0,1)
+mean((yhat-boston.test)^2)
+
+
+# -------
+# Bagging
+# -------
+
+library(randomForest)
+set.seed(1)
+
+# Bagging - randomforest when m=p (the number of parameters)
+bag.boston=randomForest(medv~.,data=Boston,subset=train,mtry=13,importance=TRUE)
+bag.boston
+
+# Predict on test set
+yhat.bag = predict(bag.boston,newdata=Boston[-train,])
+plot(yhat.bag, boston.test)
+abline(0,1)
+mean((yhat.bag-boston.test)^2)
+
+# Change the number of trees grown using the ntree argument.
+bag.boston=randomForest(medv~.,data=Boston,subset=train,mtry=13,ntree=25)
+yhat.bag = predict(bag.boston,newdata=Boston[-train,])
+mean((yhat.bag-boston.test)^2)
+
+# -------------
+# Random Forest
+# -------------
+# Random forest using 6 random variables
+set.seed(1)
+rf.boston=randomForest(medv~.,data=Boston,subset=train,mtry=6,importance=TRUE)
+yhat.rf = predict(rf.boston,newdata=Boston[-train,])
+mean((yhat.rf-boston.test)^2)
+
+# View the importance of each variable
+importance(rf.boston)
+varImpPlot(rf.boston)  # Plot the importance measures
+
+
+# --------
+# Boosting
+# --------
+
+library(gbm)
+set.seed(1)
+
+# n.trees defines number of trees, depth limits the depth of each tree
+boost.boston=gbm(medv~.,data=Boston[train,],distribution="gaussian",n.trees=5000,interaction.depth=4)
+summary(boost.boston)
+
+# partial dependence plots
+# shows the marginal effect of the selected variables on the response
+# after integrating out other variables.
+par(mfrow=c(1,2))
+plot(boost.boston,i="rm")
+plot(boost.boston,i="lstat")
+
+# Make predictions on the test set
+yhat.boost=predict(boost.boston,newdata=Boston[-train,],n.trees=5000)
+mean((yhat.boost-boston.test)^2)
+
+# Boosting with a different value of the lambda parameter
+# default is 0.001  (change the shrinkage parameter)
+boost.boston=gbm(medv~.,data=Boston[train,],distribution="gaussian",n.trees=5000,interaction.depth=4,shrinkage=0.2,verbose=F)
+yhat.boost=predict(boost.boston,newdata=Boston[-train,],n.trees=5000)
+mean((yhat.boost-boston.test)^2)
+
+
+
+
+# ------------------------------------
+# CHAPTER 9 - SUPPORT VECTOR MACHINES
+# ------------------------------------
+
+
+# Support Vector Classifier
+
+
+# Create the data
+set.seed(1)
+x=matrix(rnorm(20*2), ncol=2)
+y=c(rep(-1,10), rep(1,10))
+x[y==1,]=x[y==1,] + 1
+
+# Plot to see if linearly seperable.  They are not.
+plot(x, col=(3-y))
+
+# Dependent variable needs to be coded as a factor
+dat=data.frame(x=x, y=as.factor(y))
+
+# Run support vector machine
+library(e1071)
+svmfit=svm(y~., data=dat, kernel="linear", cost=10,scale=FALSE)  # scale FALSE does not scale the independent variables
+
+# Plot the support vector classifier
+plot(svmfit, dat)
+
+# Identify the support vectors
+svmfit$index
+
+# Get basic information about the support classifier
+summary(svmfit)
+
+# Use smaller cost parameter
+svmfit=svm(y~., data=dat, kernel="linear", cost=0.1,scale=FALSE)
+
+plot(svmfit, dat)
+
+svmfit$index
+
+# Perform cross validation (10 fold cross validation)
+# compare SVMs with a linear kernel, using a range of values of the cost parameter.
+set.seed(1)
+tune.out=tune(svm,y~.,data=dat,kernel="linear",ranges=list(cost=c(0.001, 0.01, 0.1, 1,5,10,100)))
+summary(tune.out)  # view the error from cross validation
+
+# The tune command stores the best model... this is how to access.
+bestmod=tune.out$best.model
+summary(bestmod)
+
+# Generate test data
+xtest=matrix(rnorm(20*2), ncol=2)
+ytest=sample(c(-1,1), 20, rep=TRUE)
+xtest[ytest==1,]=xtest[ytest==1,] + 1
+testdat=data.frame(x=xtest, y=as.factor(ytest))
+
+
+
+ypred=predict(bestmod,testdat)
+table(predict=ypred, truth=testdat$y)
+svmfit=svm(y~., data=dat, kernel="linear", cost=.01,scale=FALSE)
+ypred=predict(svmfit,testdat)
+table(predict=ypred, truth=testdat$y)
+x[y==1,]=x[y==1,]+0.5
+plot(x, col=(y+5)/2, pch=19)
+dat=data.frame(x=x,y=as.factor(y))
+svmfit=svm(y~., data=dat, kernel="linear", cost=1e5)
+summary(svmfit)
+plot(svmfit, dat)
+svmfit=svm(y~., data=dat, kernel="linear", cost=1)
+summary(svmfit)
+plot(svmfit,dat)
+
+# Support Vector Machine
+
+set.seed(1)
+x=matrix(rnorm(200*2), ncol=2)
+x[1:100,]=x[1:100,]+2
+x[101:150,]=x[101:150,]-2
+y=c(rep(1,150),rep(2,50))
+dat=data.frame(x=x,y=as.factor(y))
+plot(x, col=y)
+train=sample(200,100)
+svmfit=svm(y~., data=dat[train,], kernel="radial",  gamma=1, cost=1)
+plot(svmfit, dat[train,])
+summary(svmfit)
+svmfit=svm(y~., data=dat[train,], kernel="radial",gamma=1,cost=1e5)
+plot(svmfit,dat[train,])
+set.seed(1)
+tune.out=tune(svm, y~., data=dat[train,], kernel="radial", ranges=list(cost=c(0.1,1,10,100,1000),gamma=c(0.5,1,2,3,4)))
+summary(tune.out)
+table(true=dat[-train,"y"], pred=predict(tune.out$best.model,newx=dat[-train,]))
+
+# ROC Curves
+
+library(ROCR)
+rocplot=function(pred, truth, ...){
+    predob = prediction(pred, truth)
+    perf = performance(predob, "tpr", "fpr")
+    plot(perf,...)}
+svmfit.opt=svm(y~., data=dat[train,], kernel="radial",gamma=2, cost=1,decision.values=T)
+fitted=attributes(predict(svmfit.opt,dat[train,],decision.values=TRUE))$decision.values
+par(mfrow=c(1,2))
+rocplot(fitted,dat[train,"y"],main="Training Data")
+svmfit.flex=svm(y~., data=dat[train,], kernel="radial",gamma=50, cost=1, decision.values=T)
+fitted=attributes(predict(svmfit.flex,dat[train,],decision.values=T))$decision.values
+rocplot(fitted,dat[train,"y"],add=T,col="red")
+fitted=attributes(predict(svmfit.opt,dat[-train,],decision.values=T))$decision.values
+rocplot(fitted,dat[-train,"y"],main="Test Data")
+fitted=attributes(predict(svmfit.flex,dat[-train,],decision.values=T))$decision.values
+rocplot(fitted,dat[-train,"y"],add=T,col="red")
+
+# SVM with Multiple Classes
+
+set.seed(1)
+x=rbind(x, matrix(rnorm(50*2), ncol=2))
+y=c(y, rep(0,50))
+x[y==0,2]=x[y==0,2]+2
+dat=data.frame(x=x, y=as.factor(y))
+par(mfrow=c(1,1))
+plot(x,col=(y+1))
+svmfit=svm(y~., data=dat, kernel="radial", cost=10, gamma=1)
+plot(svmfit, dat)
+
+# Application to Gene Expression Data
+
+library(ISLR)
+names(Khan)
+dim(Khan$xtrain)
+dim(Khan$xtest)
+length(Khan$ytrain)
+length(Khan$ytest)
+table(Khan$ytrain)
+table(Khan$ytest)
+dat=data.frame(x=Khan$xtrain, y=as.factor(Khan$ytrain))
+out=svm(y~., data=dat, kernel="linear",cost=10)
+summary(out)
+table(out$fitted, dat$y)
+dat.te=data.frame(x=Khan$xtest, y=as.factor(Khan$ytest))
+pred.te=predict(out, newdata=dat.te)
+table(pred.te, dat.te$y)
+
+
+
+
+
