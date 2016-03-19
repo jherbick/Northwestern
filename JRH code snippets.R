@@ -12,6 +12,9 @@
 # Large data
 # ----------
 
+# Dr. Miller says to use the H20 package.
+
+
 memory.limit(size=7500)   # increase memory capacity
 
 memory.limit()   # check memory limit
@@ -35,6 +38,13 @@ names(fullDataSet2) <- names(fullDataSet)
 a <- rbind(fullDataSet, fullDataSet2)
 
 
+
+# ------------
+# Colors in R
+# ------------
+
+# Lists all the loaded, known colors in R.
+colors (distinct = FALSE)
 
 
 
@@ -552,6 +562,7 @@ HeightLM
 summary(HeightLM)
 
 # Provides fit statistics (MAE, CV, etc.)
+library(forecast)
 CV(HeightLM)
 
 
