@@ -82,12 +82,6 @@ lambda <- BoxCox.lambda(charity.t$avhv)  # -0.473644
 charity.t$avhv <- BoxCox(charity.t$avhv, lambda)
 
 
-
-
-
-
-
-
 # -----------------------------
 # set up data for analysis
 # Train, validation, test split
@@ -152,9 +146,10 @@ hist(charity$chld)
 
 
 # --------------------------------------------------------------------
-# run quick OLS linear regressions to get an idea of variables to use
-# for logistic regression
+# run forward and backward stepwise selections to get an idea of which 
+# variables to use # for logistic regression
 # --------------------------------------------------------------------
+
 library(leaps)
 model.ols.fwd <- regsubsets(donr ~ reg1 + reg2 + reg3 + reg4 + home + chld + hinc + genf + wrat + 
                                 avhv + incm + inca + plow + npro + tgif + lgif + rgif + tdon + tlag + agif, 
@@ -197,8 +192,6 @@ model.ols.bwd2 <- regsubsets(damt ~ reg1 + reg2 + reg3 + reg4 + home + chld + hi
                                 avhv + incm + inca + plow + npro + tgif + lgif + rgif + tdon + tlag + agif, 
                              data.train.std.y, nvmax=20, method="backward")
 summary(model.ols.bwd2)
-
-
 
 
 
@@ -460,10 +453,6 @@ wrat.smooth[valid.smooth.wrat>.5]=1
 table(wrat.smooth,data.valid.std.c$donr)  # confusion matrix
 
 mean(wrat.smooth==data.valid.std.c$donr)  # fraction of correct predictions = 59%
-
-
-
-
 
 
 # -------------------------------------
@@ -1253,9 +1242,9 @@ mean((y.valid - pred.valid.ls3)^2)
 sd((y.valid - pred.valid.ls3)^2)/sqrt(n.valid.y) 
 
 
-# ---------------
-# 3. LASSO ??????
-# ---------------
+# --------
+# 3. LASSO
+# --------
 
 library(glmnet)
 
@@ -1274,7 +1263,6 @@ lasso.mod=glmnet(x, y, alpha=1, lambda = grid)
 plot(lasso.mod)
 
 # Perform cross validation and compute test MSE
-# Why is this cross validation on the train set????
 set.seed(1)
 cv.out=cv.glmnet(x,y,alpha=1)
 plot(cv.out)
@@ -1324,9 +1312,9 @@ summary(pcr.fit)
 # RESAMPLING METHODS
 # ------------------
 
-# ----------------------------------------------
-# 4. K FOLD VALIDATION FOR OLS REGRESSION  ?????
-# ----------------------------------------------
+# ---------------------------------------
+# 4. K FOLD VALIDATION FOR OLS REGRESSION
+# ---------------------------------------
 
 model.ls2 <- lm(damt ~ reg3 + reg4 + home + chld + hinc + incm + plow + npro + rgif + agif, data.train.std.y)
 summary(model.ls2)  # check adj R squared
@@ -1401,36 +1389,10 @@ plot(y.valid, nnet.predict, main = "Artificial Neural Network Predictions vs Act
      xlab = "Actual", ylab = "Predictions", pch = 19, col = "blue")
 
 
-
-
-
-
-
-# Next, we use the function train() from the package caret to optimize the ANN 
-# hyperparameters decay and size, Also, caret performs resampling to give a better 
-# estimate of the error. We scale linear regression by the same value, so the error 
-# statistics are directly comparable.
-
-#library(mlbench)
-#data(BostonHousing)
-#library(caret)
-
-# Optimize the ANN hyperpameters and print the results
-#mygrid <- expand.grid(.decay = c(0.5, 0.1), .size = c(4, 5, 6))
-#nnet.fit2 <- train(medv/50 ~ ., data = BostonHousing, method = "nnet", maxit = 1000, 
-#                   tuneGrid = mygrid, trace = FALSE)
-#print(nnet.fit2)
-
-# Scale the linear regression and print the results
-#lm.fit2 <- train(medv/50 ~ ., data = BostonHousing, method = "lm") 
-#print(lm.fit2)
-
-
-
-
 # -------------------------------------
 # ANN model for regression is the best
 # make predictions on the test data
+# -------------------------------------
 
 yhat.test <- predict(nnet.fit, newdata = data.test.std)*27   # restore original data scale.
 
