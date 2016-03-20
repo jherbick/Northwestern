@@ -1672,4 +1672,179 @@ table(pred.te, dat.te$y)
 
 
 
+# ---------------------------------------------
+# CHAPTER 10 - PRINCIPAL COMPONENTS, CLUSTERING
+# ---------------------------------------------
+
+# Lab 1: Principal Components Analysis
+# ------------------------------------
+
+states=row.names(USArrests)
+states
+
+# Dataset Variables
+names(USArrests)
+
+# Mean and variance
+apply(USArrests, 2, mean)  # 2 indicates apply this to the columns.
+apply(USArrests, 2, var)
+
+# since mean and variance of assault variable is so large, 
+# scale all data to mean of 0 and deviation of 1.
+# by default, prcomp sets mean = 0, but scale=TRUE sets std dev = 1.
+pr.out=prcomp(USArrests, scale=TRUE)
+
+# ID the variables available as a result of PCA.
+# the center and scale variables correspond to the means and std dev
+# of the variables prior to PCA.
+names(pr.out)
+
+pr.out$center  # mean
+pr.out$scale   # std dev
+
+# rotation = corresponding principal component loadings
+pr.out$rotation
+
+# The columns of x = the principal components
+dim(pr.out$x)
+
+# plot the first two principal components
+# scale = 0 means that the arrows are scaled to the factor loadings.
+biplot(pr.out, scale=0)
+
+# reproduce figure 10.1
+pr.out$rotation=-pr.out$rotation
+pr.out$x=-pr.out$x
+biplot(pr.out, scale=0)
+
+# examine the std dev of each principal component.
+pr.out$sdev
+
+# identify the variance explained by each principal component by
+# squaring the PCA std deviations....
+pr.var=pr.out$sdev^2
+pr.var
+
+# ** compute the proportion of variance explained by each principal component
+# divide the variance explained by each principal component by the total variance explained.
+pve=pr.var/sum(pr.var)
+pve
+
+# Plot the cumulative variance explained by principal component.
+plot(pve, xlab="Principal Component", ylab="Proportion of Variance Explained", ylim=c(0,1),type='b')
+plot(cumsum(pve), xlab="Principal Component", ylab="Cumulative Proportion of Variance Explained", ylim=c(0,1),type='b')
+
+# compute a cumulative sum.
+a=c(1,2,8,-3)
+cumsum(a)
+
+
+# Chapter 10 Lab 2: Clustering
+# ----------------------------
+
+# K-Means Clustering
+# ------------------
+
+# setup data with 2 clusters
+set.seed(2)
+x=matrix(rnorm(50*2), ncol=2)
+x[1:25,1]=x[1:25,1]+3
+x[1:25,2]=x[1:25,2]-4
+
+# perform k means clustering, with k=2
+# nstart = the number of random sets to be chosen (i.e. the number of random cluster assignments in step 1)
+# kmeans will then take the best results
+km.out=kmeans(x,2,nstart=20) 
+km.out$cluster  # shows the cluster assignment of each observation
+# col=must be the color
+plot(x, col=(km.out$cluster+1), main="K-Means Clustering Results with K=2", xlab="", ylab="", pch=20, cex=2)
+
+# in real life, you do not know the number of clusters, try k=3
+set.seed(4)
+km.out=kmeans(x,3,nstart=20)
+km.out
+plot(x, col=(km.out$cluster+1), main="K-Means Clustering Results with K=3", xlab="", ylab="", pch=20, cex=2)
+
+# compare nstart=1 to nstart=20
+# $withinss is the within cluster sum of squares, which we seek to minimize.
+# ** always use a large k such as 20 or 50. **
+# Also important to set a seed so that results can be replicated.
+set.seed(3)
+km.out=kmeans(x,3,nstart=1)
+km.out$tot.withinss
+km.out=kmeans(x,3,nstart=20)
+km.out$tot.withinss
+
+
+# Hierarchical Clustering
+# -----------------------
+
+hc.complete=hclust(dist(x), method="complete")
+hc.average=hclust(dist(x), method="average")
+hc.single=hclust(dist(x), method="single")
+par(mfrow=c(1,3))
+plot(hc.complete,main="Complete Linkage", xlab="", sub="", cex=.9)
+plot(hc.average, main="Average Linkage", xlab="", sub="", cex=.9)
+plot(hc.single, main="Single Linkage", xlab="", sub="", cex=.9)
+cutree(hc.complete, 2)
+cutree(hc.average, 2)
+cutree(hc.single, 2)
+cutree(hc.single, 4)
+xsc=scale(x)
+plot(hclust(dist(xsc), method="complete"), main="Hierarchical Clustering with Scaled Features")
+x=matrix(rnorm(30*3), ncol=3)
+dd=as.dist(1-cor(t(x)))
+plot(hclust(dd, method="complete"), main="Complete Linkage with Correlation-Based Distance", xlab="", sub="")
+
+
+# Chapter 10 Lab 3: NCI60 Data Example
+
+# The NCI60 data
+
+library(ISLR)
+nci.labs=NCI60$labs
+nci.data=NCI60$data
+dim(nci.data)
+nci.labs[1:4]
+table(nci.labs)
+
+# PCA on the NCI60 Data
+
+pr.out=prcomp(nci.data, scale=TRUE)
+Cols=function(vec){
+    cols=rainbow(length(unique(vec)))
+    return(cols[as.numeric(as.factor(vec))])
+}
+par(mfrow=c(1,2))
+plot(pr.out$x[,1:2], col=Cols(nci.labs), pch=19,xlab="Z1",ylab="Z2")
+plot(pr.out$x[,c(1,3)], col=Cols(nci.labs), pch=19,xlab="Z1",ylab="Z3")
+summary(pr.out)
+plot(pr.out)
+pve=100*pr.out$sdev^2/sum(pr.out$sdev^2)
+par(mfrow=c(1,2))
+plot(pve,  type="o", ylab="PVE", xlab="Principal Component", col="blue")
+plot(cumsum(pve), type="o", ylab="Cumulative PVE", xlab="Principal Component", col="brown3")
+
+# Clustering the Observations of the NCI60 Data
+
+sd.data=scale(nci.data)
+par(mfrow=c(1,3))
+data.dist=dist(sd.data)
+plot(hclust(data.dist), labels=nci.labs, main="Complete Linkage", xlab="", sub="",ylab="")
+plot(hclust(data.dist, method="average"), labels=nci.labs, main="Average Linkage", xlab="", sub="",ylab="")
+plot(hclust(data.dist, method="single"), labels=nci.labs,  main="Single Linkage", xlab="", sub="",ylab="")
+hc.out=hclust(dist(sd.data))
+hc.clusters=cutree(hc.out,4)
+table(hc.clusters,nci.labs)
+par(mfrow=c(1,1))
+plot(hc.out, labels=nci.labs)
+abline(h=139, col="red")
+hc.out
+set.seed(2)
+km.out=kmeans(sd.data, 4, nstart=20)
+km.clusters=km.out$cluster
+table(km.clusters,hc.clusters)
+hc.out=hclust(dist(pr.out$x[,1:5]))
+plot(hc.out, labels=nci.labs, main="Hier. Clust. on First Five Score Vectors")
+table(cutree(hc.out,4), nci.labs)
 
