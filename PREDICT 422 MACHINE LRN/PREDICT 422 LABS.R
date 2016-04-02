@@ -1779,25 +1779,41 @@ km.out$tot.withinss
 # Hierarchical Clustering
 # -----------------------
 
+# plot the hierarchical clustering dendrogram using complete, single, and average 
+# linkage clustering, with Euclidean distance as the dissimilarity measure.
+
+# dist() computes the 50 x 50 inter-observation Euclidean distance matrix.
 hc.complete=hclust(dist(x), method="complete")
 hc.average=hclust(dist(x), method="average")
 hc.single=hclust(dist(x), method="single")
+
+# plot the dendrograms, the numbers = the observations
 par(mfrow=c(1,3))
 plot(hc.complete,main="Complete Linkage", xlab="", sub="", cex=.9)
 plot(hc.average, main="Average Linkage", xlab="", sub="", cex=.9)
 plot(hc.single, main="Single Linkage", xlab="", sub="", cex=.9)
+
+# determine the cluster labels for each observation associated with a given
+# cut of the dendrogram
 cutree(hc.complete, 2)
 cutree(hc.average, 2)
 cutree(hc.single, 2)
 cutree(hc.single, 4)
+
+# scale the data before performing hierarchical clustering.
 xsc=scale(x)
 plot(hclust(dist(xsc), method="complete"), main="Hierarchical Clustering with Scaled Features")
+
+# correlation-based distance can be computed using as.dist
 x=matrix(rnorm(30*3), ncol=3)
 dd=as.dist(1-cor(t(x)))
 plot(hclust(dd, method="complete"), main="Complete Linkage with Correlation-Based Distance", xlab="", sub="")
 
 
+
+
 # Chapter 10 Lab 3: NCI60 Data Example
+# ------------------------------------
 
 # The NCI60 data
 
